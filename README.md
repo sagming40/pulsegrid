@@ -168,6 +168,7 @@ pulsegrid/
 | [API 명세서](docs/03_api_spec.md) | 엔드포인트, 데이터 모델, WebSocket 규격 |
 | [화면 설계서](docs/04_ui_design.md) | 레이아웃, 상태 표시 규칙, 반응형 대응 |
 | [개발 일정](docs/05_milestones.md) | 마일스톤, 완료 기준, 리스크 관리 |
+| [DEVLOG](docs/DEVLOG.md) | 세션별 작업 기록, 트러블슈팅 히스토리 |
 
 ---
 
