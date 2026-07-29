@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>PULSEGRID</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <style>
         body { 
             font-family: sans-serif; 
@@ -114,6 +115,10 @@
 <body>
     <h1>PULSEGRID</h1>
     <div id="cards-container"></div>
+
+    <div style="margin-top: 24px; max-width: 900px; background: white; border: 1px solid #ddd; border-radius: 10px; padding: 16px;">
+        <canvas id="trend-chart" height="100"></canvas>
+    </div>
 
     <script>
         // ──────────────────────────────────────────────────────────────────
@@ -237,6 +242,7 @@
             const card = getOrCreateCard(deviceId, metric.device_name);
             
             updateMetricRow(card, "cpu", metric.cpu.usage, metric.cpu.temp);
+            maybePushChartPoint(deviceId, metric.cpu.usage);   // ⭐ 추가
             updateMetricRow(card, "gpu", metric.gpu.usage, metric.gpu.temp);
             updateMetricRow(card, "ram", metric.ram.usage, null);  // RAM 행엔 온도 표시 칸이 없어 null로 넘겨도 안전함
 
@@ -261,6 +267,88 @@
             badge.className = `status-badge ${status}`;   // online 또는 offline 클래스
             card.classList.toggle("offline", status === "offline");    
         }
+
+        // ─────────────────────────────────────────────
+        // Chart.js 추이 그래프 (05_ui_design 5장 스펙)
+        // ─────────────────────────────────────────────
+        const MAX_POINTS = 30;       // 최근 30포인트만 유지 (2초 × 30 = 60초)
+        const CHART_TICK_INTERVAL_MS = 1800;  // 이 시간 안에 여러 기기가 몰려와도 기록은 한 번만
+
+        const chartColors = {};      // device_id → 선 색깔 저장
+        const colorPalette = ["#3a86ff", "#f4b400", "#8e44ad", "#e63946"];
+        const lastKnownUsage = {};   // device_id → 가장 최근에 들은 CPU 사용률 (이어 그리기용)
+        let lastChartTickAt = 0;     // 마지막으로 그래프에 기록계가 찍은 시각
+        let trendChart = null;
+
+        // 기기별로 고정된 선 색깔을 배정 (처음 등장한 순서대로 팔레트에서 하나씩 배정)
+        function getDeviceColor(deviceId) {
+            if (!chartColors[deviceId]) {
+                const idx = Object.keys(chartColors).length % colorPalette.length;
+                chartColors[deviceId] = colorPalette[idx];
+            }
+            return chartColors[deviceId];
+        }
+
+        function initChart() {
+            const ctx = document.getElementById("trend-chart").getContext("2d");
+            trendChart = new Chart(ctx, {
+                type: "line",
+                data: { labels: [], datasets: [] },
+                options: {
+                    animation: false,
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { callback: (v) => v + "%" } }
+                    },
+                    plugins: { legend: { position: "top" } }
+                }
+            });
+        }
+
+        // 이 기기 전용 선(dataset)이 아직 없으면 새로 만들고, 있으면 그걸 반환
+        function getOrCreateDataset(deviceId) {
+            let dataset = trendChart.data.datasets.find((d) => d.deviceId === deviceId);
+            if (!dataset) {
+                dataset = {
+                    deviceId,
+                    label: deviceId,
+                    data: [],
+                    borderColor: getDeviceColor(deviceId),
+                    backgroundColor: getDeviceColor(deviceId),
+                    tension: 0.3,
+                    pointRadius: 0
+                };
+                trendChart.data.datasets.push(dataset);
+            }
+            return dataset;
+        }
+
+        // 기록계 역할 — 누가 소식을 보내든, 최소 1.8초 이상이 지나야만 새 점을 찍음
+        function maybePushChartPoint(deviceId, cpuUsage) {
+            lastKnownUsage[deviceId] = cpuUsage;    // 값은 일단 항상 최신으로 저장해둠
+
+            const now = Date.now();
+            if (now - lastChartTickAt < CHART_TICK_INTERVAL_MS) return;  // 너무 최근에 찍었으면 이번엔 건너뜀
+            lastChartTickAt = now;
+
+            const label = new Date().toLocaleTimeString("ko-KR", { hour12: false });
+            trendChart.data.labels.push(label);
+            if (trendChart.data.labels.length > MAX_POINTS) {
+                trendChart.data.labels.shift();
+            }
+
+            // 지금까지 한 번이라도 소식이 왔던 모든 기기에 대해, 이번 틱의 값을 채워넣음
+            Object.keys(lastKnownUsage).forEach((id) => {
+                const dataset = getOrCreateDataset(id);
+                dataset.data.push(lastKnownUsage[id]);
+                if (dataset.data.length > MAX_POINTS) {
+                    dataset.data.shift();
+                }
+            });
+
+            trendChart.update("none");   // "none" = 매번 애니메이션 없이 즉시 갱신
+        }
+
+        initChart();
 
         // 브라우저 → 서버 "통화 계속 연결해두기" 요청
         // window.location.hostname = 지금 이 페이지에 접속한 주소를 그대로 재사용
