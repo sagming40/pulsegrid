@@ -54,3 +54,29 @@
 - M2 시작: FastAPI 서버 구축, `POST /api/v1/metrics` 구현, WebSocket 브로드캐스트
 
 ---
+
+## 2026-07-29 — M2 완료: 서버 + 단일 기기 연동
+
+**관련 마일스톤**: M2 (서버 + 단일 기기 연동) → 완료
+
+**한 일**
+- FastAPI 서버 기본 구조 세팅 (`server/main.py`), uvicorn 실행 확인
+- Pydantic `MetricPayload` 모델 정의 (`server/models.py`) — Cpu/Gpu/Ram/Disk/BatteryMetric 하위 모델 + 필수/선택 필드 구분
+- `POST /api/v1/metrics` 구현, `device_id` 키 딕셔너리(`latest_metrics`)에 최신 상태 저장
+- `WS /ws/dashboard` 구현 — 연결 시 `snapshot` 전송, 데이터 수신 시 전체 클라이언트에 `metric_update` 브로드캐스트
+- `agent.py`에 서버 전송 로직(`requests.post`) 추가
+- `web/index.html` 최소 페이지 작성, WebSocket으로 CPU 값 실시간 표시
+- 브라우저 + agent.py 동시 실행으로 2초 간격 자동 갱신 확인 → M2 완료 기준 충족
+
+**막혔던 점 / 트러블슈팅**
+- `app = FastAPI` 괄호 누락 → `TypeError: FastAPI.get() missing 1 required positional argument`
+- `WebSocket`을 `WecSocket`으로 오타 → `ImportError`
+- WebSocket 연결이 계속 실패 → `websockets` 라이브러리 미설치가 원인 (fastapi/uvicorn 설치만으론 부족)
+- `models.py` 파일을 `model.py`(단수)로 잘못 생성했다가 뒤늦게 발견 → 커밋 전이라 파일명만 정정 후 재작업
+- agent.py에 서버로 POST 전송하는 코드가 없다는 걸 뒤늦게 인지 → `requests.post()` + `try/except`로 추가
+- 교훈: 새 라이브러리(FastAPI 등)로 기능 확장할 때는 "관련 하위 패키지가 따로 필요할 수 있다"는 점을 염두에 둘 것
+
+**다음에 할 일**
+- M3 시작: agent 설정 파일 분리(`device_id`, 서버 주소), 노트북에서 동일 코드 실행, 서버 측 기기별 `online`/`offline` 판정 로직 추가
+
+---
