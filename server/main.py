@@ -120,7 +120,11 @@ async def websocket_endpoint(websocket: WebSocket):
     
     # 방금 들어온 이 손님(이 브라우저)한테만 현재 상황 브리핑
     # latest_metrics.values() = 창고(우편함)에 쌓여있는 기기별 최신 데이터 전부
-    snapshot_data = [metric.model_dump() for metric in latest_metrics.values()]
+    snapshot_data = []
+    for device_id, metric in latest_metrics.items():
+        dumped = metric.model_dump()
+        dumped["status"] = device_status.get(device_id, "offline")  # 스냅샷에 실제 상태값도 같이 실어보냄
+        snapshot_data.append(dumped)
     await websocket.send_json({
         "type": "snapshot",
         "data": snapshot_data
