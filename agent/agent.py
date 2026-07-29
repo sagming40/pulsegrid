@@ -1,26 +1,20 @@
 import requests
 import time
+import json   # 스티커(config.json)를 읽으려면 json 모듈이 필요해
 
-# LibreHardwareMonitor가 데이터를 차려놓는 "식탁" 주소
-LHM_URL = "http://localhost:8085/data.json"
-
-# PulseGrid 서버 주소
-SERVER_URL = "http://127.0.0.1:8000/api/v1/metrics"
-
-# ───────────────────────────────────────────────────────────────────────
-# 센서 매핑 테이블
-# "이름(Text)"이 겹치는 문제 때문에, 대신 SensorId(고유 주소)로 찾는다.
-# 나중에(M3) 노트북용 매핑표가 따로 필요하면 이 딕셔너리를 device_id별로 분리할 예정.
-# ───────────────────────────────────────────────────────────────────────
-SENSOR_MAP = {
-    "cpu_usage": "/amdcpu/0/load/0",             # CPU Total (전체 사용률)
-    "cpu_temp": "/amdcpu/0/temperature/2",       # Core (Tctl/Tdie)
-    "gpu_usage": "/gpu-nvidia/0/load/0",         # RTX 5070 GPU Core 사용률
-    "gpu_temp": "/gpu-nvidia/0/temperature/0",   # RTX 5070 GPU Core 온도
-    "ram_usage": "/ram/load/0",                  # 실제 물리 RAM 사용률 (가상메모리 아님)
-    "ram_used": "/ram/data/0",                   # 사용중인 용량 (GB)
-    "ram_available": "/ram/data/1",              # 남은 용량 (GB)
-}
+# ───────────────────────────────────────────────────────────────────
+# 설정 파일 읽기
+# config.json = 이 agent가 "누구 짐이고, 어디로 보낼지" 적힌 이름표 스티커
+# 코드 안에 하드코딩하지 않고, 매번 이 파일을 열어서 확인만 함
+# ───────────────────────────────────────────────────────────────────
+with open("config.json", "r", encoding="utf-8") as f:
+    config = json.load(f)
+    
+DEVICE_ID = config["device_id"]
+DEVICE_NAME = config["device_name"]
+LHM_URL = config["lhm_url"]
+SERVER_URL = config["server_url"]
+SENSOR_MAP = config["sensor_map"]     
 
 
 def find_by_sensor_id(node, target_id):
@@ -64,10 +58,11 @@ def parse_value(raw_value):
         return None
     
     
-def collect_metrics(device_id, device_name):
+def collect_metrics():
     """
-    창고(LibreHardwareMonitor)에서 필요한 값만 뽑아서
-    API 명세서(03) 형식의 '택배 상자'로 포함하는 함수
+    device_id, device_name은 이제 매개변수로 받지 않음.
+    파일 맨 위에서 이미 config.json을 읽어 DEVICE_ID, DEVICE_NAME
+    전역변수로 만들어놨으니, 함수 안에서 그 값을 가져다 씀.
     """            
     # 창고 문 두드리기 (HTTP 요청 = "안에 뭐가 있는지 보여줘")
     response = requests.get(LHM_URL)
@@ -89,14 +84,14 @@ def collect_metrics(device_id, device_name):
         
     # API 명세서(03) 2.1절 MetricPayload 형식으로 포장
     payload = {
-        "device_id": device_id,
-        "device_name": device_name,
+        "device_id": DEVICE_ID,
+        "device_name": DEVICE_NAME,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
         "cpu": {"usage": cpu_usage, "temp": cpu_temp},
         "gpu": {"usage": gpu_usage, "temp": gpu_temp},
         "ram": {"usage": ram_usage, "used_gb": ram_used, "total_gb": ram_total},
         "disk": None,      # P1 확장 예정 (M6)
-        "battery": None,   # 데스크탑이라 항상 None
+        "battery": None,   # 추후 노트북 config에서 battery 항목 추가 예정 (M6)
     }
     return payload         
         
@@ -105,7 +100,7 @@ if __name__ == "__main__":
     # 2초마다 반복해서 값을 뽑아 터미널에 출력
     # M1 완료 기준: 이 반복문이 계속 정상적인 값을 찍으면 통과!
     while True:
-        metrics = collect_metrics("desktop", "DESKTOP-5VSB06S")
+        metrics = collect_metrics()
         print(metrics)
         
         # 뽑은 값을 서버로 전송 (택배 상자를 서버 접수처로 보내는 것)

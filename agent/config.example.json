@@ -1,0 +1,15 @@
+{
+  "device_id": "desktop",
+  "device_name": "DESKTOP-5VSB06S",
+  "lhm_url": "http://localhost:8085/data.json",
+  "server_url": "http://127.0.0.1:8000/api/v1/metrics",
+  "sensor_map": {
+    "cpu_usage": "/amdcpu/0/load/0",
+    "cpu_temp": "/amdcpu/0/temperature/2",
+    "gpu_usage": "/gpu-nvidia/0/load/0",
+    "gpu_temp": "/gpu-nvidia/0/temperature/0",
+    "ram_usage": "/ram/load/0",
+    "ram_used": "/ram/data/0",
+    "ram_available": "/ram/data/1"   
+  }
+}
