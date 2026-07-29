@@ -2,70 +2,221 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>PulseGrid (임시 화면 - M3)</title>
+    <title>PULSEGRID</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
+        body { 
+            font-family: sans-serif; 
+            padding: 20px;
+            background: #f5f5f5; 
+        }
+        #cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
         .device-card {
             display: inline-block;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px;
-            width: 220px;
-            vertical-align: top;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 16px;
+            width: 260px;
             transition: opacity 0.3s;
         }
         /* offline 상태일 때 카드 전체를 흐리게 (04_ui_design.md 4.3절 규칙) */
         .device-card.offline {
             opacity: 0.4;
         }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .device-icon {
+            font-size: 1.4em;
+        }
+        .device-title {
+            flex: 1;
+        }
+        .device-name {
+            font-weight: bold;
+        }
+        .device-hostname {
+            font-size: 0.75em;
+            color: #888;
+        }
         .status-badge {
             font-weight: bold;
             padding: 2px 8px;
             border-radius: 4px;
-            font-size: 0.8em;
+            font-size: 0.75em;
         }
         .status-badge.online { background: #4caf50; color: white; }
         .status-badge.offline { background: #999; color: white; }
+
+        .metric-row {
+            margin-bottom: 10px;
+        }
+        .metric-label {
+            display: flex;
+            gap: 6px;
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+        .metric-label span:first-child {
+            font-weight: bold;
+            width: 32px;
+        }
+        .metric-temp {
+            color: #666;
+        }
+
+        /* 게이지 트랙 = 주유소 계기판의 "빈 눈금판" 부분. 안이 비어있는 틀만 있는 상태 */
+        .gauge-track {
+            background: #eee;
+            border-radius: 4px;
+            height: 8px;
+            overflow: hidden;
+        }
+        /* 게이지 필 = 눈금판 안을 채우는 바늘/막대. width%로 채워지는 양을 조절함 */
+        .gauge-fill {
+            height: 100%;
+            width: 0%;
+            background: #999; /* 임계치 색상은 Task 4-2에서 조건별로 바꿀 예정 */
+            transition: width 0.3s;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: #555;
+            border-top: 1px solid #eee;
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+        /* 센서가 아예 없는 항목(예: 데스크탑의 배터리 항목)은 흐린색 */
+        .card-footer .dim {
+            color: #bbb;
+        }
     </style>
 </head>
 <body>
-    <h1>PulseGrid — 확인용 임시 화면</h1>
+    <h1>PULSEGRID</h1>
     <div id="cards-container"></div>
 
     <script>
-        // ─────────────────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────────────────
         // 게시판(카드)들을 담아두는 창고
-        // key = device_id, value = 그 기기의 카드를 가리키는 HTML 요소
+        // key = device_id, value = 그 기기의 카드를 가리키는 HTML 요소 (카드 DOM)
         // 이렇게 저장해두면, 매번 새로 안 만들고 "이미 있으면 재사용"이 가능함
-        // ─────────────────────────────────────────────────────────
+        // ──────────────────────────────────────────────────────────────────
         const deviceCards = {};
 
-        function getOrCreateCard(deviceId) {
-            // 이미 이 기기의 게시판(카드)이 있으면 그걸 그대로 반환
+        // 값이 없으면(null/undefined) 대시(—)로 표시
+        // 이유: 04_ui_design 3.3절 — 행이 사라졌다 나타나면 카드가 출렁여서 화면이 흔들림
+        function formatUsage(value) {
+            if (value === null || value === undefined) return "—";
+            return `${value.toFixed(1)}%`;
+        }
+        function formatTemp(value) {
+            if (value === null || value === undefined) return "—";
+            return `${Math.round(value)}°C`;
+        }
+
+        function getOrCreateCard(deviceId, deviceName) {
+            // 이미 이 기기의 게시판(카드)이 있으면 그걸 그대로 반환(재사용)
             if (deviceCards[deviceId]) {
                 return deviceCards[deviceId];
             }
+
+            // 아이콘 = 택배 상자 겉면 스티커. device_id에 "laptop"이 들어있으면 노트북 아이콘
+            const icon = deviceId.includes("laptop") ? "💻" : "🖥️";    
+
             // 없으면 새로 생성하여 화면에 붙임
             const card = document.createElement("div");
             card.className = "device-card";
             card.innerHTML = `
-                <h3>${deviceId}</h3>
-                <span class="status-badge online">online</span>
-                <p class="cpu-line">CPU: - % (-°C)</p>
-                <p class="ram-line">RAM: - %</p>
+                <div class="card-header">
+                    <span class="device-icon">${icon}</span>
+                    <div class="device-title">
+                        <div class="device-name">${deviceId}</div>
+                        <div class="device-hostname">${deviceName ?? "—"}</div>
+                    </div>
+                    <span class="status-badge online">online</span>
+                </div>
+                
+                <div class="metric-row" data-metric="cpu">
+                    <div class="metric-label">
+                        <span>CPU</span>
+                        <span class="metric-usage">—</span>
+                        <span class="metric-temp">· —</span>
+                    </div>
+                    <div class="gauge-track"><div class="gauge-fill"></div></div>
+                </div>
+                
+                <div class="metric-row" data-metric="gpu">
+                    <div class="metric-label">
+                        <span>GPU</span>
+                        <span class="metric-usage">—</span>
+                        <span class="metric-temp">· —</span>
+                    </div>
+                    <div class="gauge-track"><div class="gauge-fill"></div></div>
+                </div>
+                
+                <div class="metric-row" data-metric="ram">
+                    <div class="metric-label">
+                        <span>RAM</span>
+                        <span class="metric-usage">—</span>
+                    </div>
+                    <div class="gauge-track"><div class="gauge-fill"></div></div>
+                </div>
+                
+                <div class="card-footer">
+                    <span class="disk-summary">디스크 —</span>
+                    <span class="battery-summary">배터리 —</span>
+                </div>    
             `;
             document.getElementById("cards-container").appendChild(card);
             deviceCards[deviceId] = card;
             return card;
         }
 
+        // 지표 행 하나(CPU/GPU/RAM)를 갱신하는 공용 함수
+        // → 택배 상자 하나를 열어서 "사용률"과 "온도" 라벨을 붙이고, 게이지 바 길이를 조절하는 역할
+        function updateMetricRow(card, metricName, usage, temp) {
+            const row = card.querySelector(`.metric-row[data-metric="${metricName}"]`);
+            row.querySelector(".metric-usage").innerText = formatUsage(usage);
+
+            const tempEl = row.querySelector(".metric-temp");
+            if (tempEl) {
+                tempEl.innerText = `· ${formatTemp(temp)}`;
+            }
+
+            const fill = row.querySelector(".gauge-fill");
+            fill.style.width = `${usage ?? 0}%`;
+        }
+
         function updateCardMetrics(deviceId, metric) {
-            const card = getOrCreateCard(deviceId);
-            card.querySelector(".cpu-line").innerText = 
-                `CPU: ${metric.cpu.usage}% (${metric.cpu.temp}°C)`;
-            card.querySelector(".ram-line").innerText = 
-                `RAM: ${metric.ram.usage}%`;
+            const card = getOrCreateCard(deviceId, metric.device_name);
+            
+            updateMetricRow(card, "cpu", metric.cpu.usage, metric.cpu.temp);
+            updateMetricRow(card, "gpu", metric.gpu.usage, metric.gpu.temp);
+            updateMetricRow(card, "ram", metric.ram.usage, null);  // RAM 행엔 온도 표시 칸이 없어 null로 넘겨도 안전함
+
+            const diskEl = card.querySelector(".disk-summary");
+            diskEl.innerText = `디스크 ${formatUsage(metric.disk?.usage)}`;
+
+            const batteryEl = card.querySelector(".battery-summary");
+            if (metric.battery) {
+                batteryEl.innerText = `배터리 ${Math.round(metric.battery.level)}%`;
+                batteryEl.classList.remove("dim");
+            } else {
+                // 기기에 배터리가 아예 없는 경우 (예: 데스크탑) — 흐린 색으로 대시 표시
+                batteryEl.innerText = "배터리 —";
+                batteryEl.classList.add("dim");
+            }
         }
 
         function updateCardStatus(deviceId, status) {
@@ -73,13 +224,7 @@
             const badge = card.querySelector(".status-badge");
             badge.innerText = status;
             badge.className = `status-badge ${status}`;   // online 또는 offline 클래스
-
-            // 카드 전체에 offline 클래스를 붙였다 뗐다 (흐리게 처리용)
-            if (status === "offline") {
-                card.classList.add("offline");
-            } else {
-                card.classList.remove("offline");
-            }
+            card.classList.toggle("offline", status === "offline");    
         }
 
         // 브라우저 → 서버 "통화 계속 연결해두기" 요청
@@ -95,6 +240,7 @@
                 // 연결 직후 한 번, 지금까지 서버가 알고 있던 모든 기기 정보를 한꺼번에 반영
                 message.data.forEach((metric) => {
                     updateCardMetrics(metric.device_id, metric);
+                    updateCardStatus(metric.device_id, metric.status);
                 });
             }
             
