@@ -4,6 +4,9 @@ import time
 # LibreHardwareMonitor가 데이터를 차려놓는 "식탁" 주소
 LHM_URL = "http://localhost:8085/data.json"
 
+# PulseGrid 서버 주소
+SERVER_URL = "http://127.0.0.1:8000/api/v1/metrics"
+
 # ───────────────────────────────────────────────────────────────────────
 # 센서 매핑 테이블
 # "이름(Text)"이 겹치는 문제 때문에, 대신 SensorId(고유 주소)로 찾는다.
@@ -104,4 +107,13 @@ if __name__ == "__main__":
     while True:
         metrics = collect_metrics("desktop", "DESKTOP-5VSB06S")
         print(metrics)
+        
+        # 뽑은 값을 서버로 전송 (택배 상자를 서버 접수처로 보내는 것)
+        try:
+            response = requests.post(SERVER_URL, json=metrics)
+            print("서버 응답:", response.json())
+        except requests.exceptions.RequestException as e:
+            # 서버가 꺼져 있거나 네트워크 문제가 생겼을 때
+            print("서버 전송 실패:", e)    
+        
         time.sleep(2)    
