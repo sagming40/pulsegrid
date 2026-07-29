@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi import WebSocket
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from models import MetricPayload
 
 # 매니저(app) 한 명 채용
@@ -23,7 +25,7 @@ async def broadcast(message: dict):
 # 비유: 가게 정문에 "누가 왔나요?" 라고 물어보면 "네, 저 왔습니다." 라고 대답하는 것
 @app.get("/")
 def read_root():
-    return {"message": "PulseGrid 서버가 살아있습니다 🚀"}
+    return FileResponse("../web/index.html")
 
 
 @app.post("/api/v1/metrics")

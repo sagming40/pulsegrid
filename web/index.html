@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>PulseGrid (임시 화면)</title>
+</head>
+<body>
+    <h1>PulseGrid — 확인용 임시 화면</h1>
+    <div id="output">연결 대기 중...</div>
+
+    <script>
+        // 브라우저 → 서버 "통화 계속 연결해두기" 요청
+        const ws = new WebSocket("ws://127.0.0.1:8000/ws/dashboard");
+
+        // 서버에서 어떤 메시지가 올 때마다 이 코드가 실행됨
+        ws.onmessage = (event) => {
+            const message = JSON.parse(event.data);   // 문자열로 온 메시지를 다시 객체로 변환
+
+            // metric_update 타입일 때만 화면 갱신 (지금은 snapshot 무시)
+            if (message.type === "metric_update") {
+                const metric = message.data;
+                document.getElementById("output").innerText = 
+                    `[${metric.device_id}] CPU: ${metric.cpu.usage}% (${metric.cpu.temp}°C)`;
+            }
+        }
+    </script>
+</body>    
+</html>
