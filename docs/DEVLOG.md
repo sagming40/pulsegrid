@@ -80,3 +80,29 @@
 - M3 시작: agent 설정 파일 분리(`device_id`, 서버 주소), 노트북에서 동일 코드 실행, 서버 측 기기별 `online`/`offline` 판정 로직 추가
 
 ---
+
+## 2026-07-29 — M3 완료: 다중 기기 연동
+
+**관련 마일스톤**: M3 (다중 기기 연동) → 완료
+
+**한 일**
+- agent 설정값(`device_id`, `device_name`, `server_url`, `sensor_map`)을 `config.json`으로 분리, `config.example.json` 추가 (Git 추적)
+- 노트북(Intel i7-1255U / Iris Xe) 센서 SensorId 매핑 완료 — CPU는 `/intelcpu/0/...`, GPU는 `/gpu-intel-integrated/...`(내장그래픽은 온도 센서 없어 `null` 처리)
+- 노트북에서 `agent.py` 실행 → 데스크탑 서버로 데이터 전송 성공
+- 서버에 `last_seen`(기기별 마지막 수신 시각), `device_status`(online/offline) 딕셔너리 추가
+- `lifespan` + `asyncio.create_task`로 서버 시작 시 백그라운드 순찰 작업(`patrol_offline_devices`) 등록 — 3초 주기로 각 기기의 마지막 수신 시각 확인, 10초 초과 시 offline 전환 및 `device_status` 브로드캐스트
+- `web/index.html`을 기기별 카드 구조로 개편 (`getOrCreateCard`) — `snapshot`/`metric_update`/`device_status` 메시지 모두 처리
+- 데스크탑+노트북 동시 실행으로 최종 검증: 한쪽만 꺼도 다른 쪽 상태에 영향 없이 독립적으로 online/offline 판정됨을 확인
+
+**막혔던 점 / 트러블슈팅**
+- `collect_metrics()` 리팩터링 중 함수 시그니처(매개변수)는 안 고치고 몸통/주석만 고쳐서 `TypeError` 발생 → 리팩터링 시 시그니처와 몸통을 함께 확인할 것
+- `config.example.json`만 만들고 실제 `config.json` 생성을 빼먹어 `FileNotFoundError` 발생
+- 노트북에서 서버로 접속 시 `TimeoutError` 발생 → 원인은 `uvicorn`이 기본값(`127.0.0.1`)으로만 열려 있었던 것. `--host 0.0.0.0`으로 해결
+- `web/index.html`의 WebSocket 주소가 `127.0.0.1`로 하드코딩되어 있어 노트북에서 페이지를 열면 자기 자신에게 연결 시도 → `window.location.hostname`으로 동적 처리하여 해결
+- 서버 쪽 브로드캐스트 메시지 타입에 오타(`devices_status` vs `device_status`) 발생 — 같은 메시지를 두 곳(receive_metrics, patrol_offline_devices)에서 만들다 보니 한쪽만 놓침. 코드 검수 단계에서 발견
+- 교훈: 서로 다른 컴퓨터가 통신할 때는 `127.0.0.1`(자기 자신)과 실제 네트워크 IP를 명확히 구분해야 함. agent, 서버, 프론트엔드 세 군데 모두에서 이 실수가 반복됐음
+
+**다음에 할 일**
+- M4 시작: 기기 카드 UI 정식 구현(게이지 바, 온도별 색상 경고), Chart.js 실시간 추이 그래프, 반응형 레이아웃, WebSocket 자동 재연결
+
+---

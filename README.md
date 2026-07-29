@@ -4,7 +4,7 @@
 
 노트북과 데스크탑처럼 사양이 서로 다른 여러 대의 PC의 CPU / GPU / RAM 상태를 한 화면에서 실시간으로 확인할 수 있는 개인용 모니터링 대시보드입니다.
 
-> **개발 진행 중** — 현재 M2(서버 + 단일 기기 연동) 완료, M3(다중 기기 연동) 진행 예정
+> **개발 진행 중** — 현재 M3(다중 기기 연동) 완료, M4(대시보드 완성 → v1.0) 진행 예정
 > 진행 상황은 [개발 일정 문서](docs/05_milestones.md)를 참고하세요.
 
 <!-- TODO: 대시보드 스크린샷 또는 동작 GIF 삽입 -->
@@ -128,23 +128,32 @@ pulsegrid/
    pip install -r requirements.txt
 ```
 
-4. 서버 실행
+4. 서버 실행 (다른 기기에서도 접속할 수 있도록 `--host 0.0.0.0` 필수)
 
 ```bash
-   uvicorn main:app --reload
+   uvicorn main:app --reload --host 0.0.0.0
 ```
 
 5. 브라우저에서 `http://127.0.0.1:8000` 접속 확인
 
-6. (별도 터미널) `agent/agent.py` 실행 → 대시보드에 CPU/GPU/RAM 값이 2초 간격으로 갱신되는지 확인
+6. `agent/config.example.json`을 같은 폴더에 `config.json`으로 복사 후, 자신의 기기에 맞게 값 수정
+- 다른 기기를 추가할 경우, 그 기기에서도 `agent/` 폴더와 자신만의 `config.json`을 두고 동일하게 실행
+
+7. (별도 터미널) `agent/agent.py` 실행 → 대시보드에 CPU/GPU/RAM 값이 2초 간격으로 갱신되는지 확인
 
 ### 설정
 
-<!-- TODO: M3 완료 후 작성 -->
+`agent/config.json` (Git에 포함되지 않음, 각자 로컬에서 생성)
 
-```
-(작성 예정)
-```
+| 필드 | 설명 |
+|---|---|
+| `device_id` | 기기 고유 식별자 (예: `desktop`, `laptop`) |
+| `device_name` | 대시보드에 표시될 이름 |
+| `lhm_url` | LibreHardwareMonitor의 로컬 JSON 주소 |
+| `server_url` | PulseGrid 서버 주소 (예: `http://<서버IP>:8000/api/v1/metrics`) |
+| `sensor_map` | 기기별 SensorId 매핑 (CPU/GPU/RAM 등) |
+
+`config.example.json`을 참고해 작성하며, 새 기기를 추가할 때는 `agent/config.example.json`을 복사해 그 기기에 맞는 값으로 채우면 됩니다.
 
 ---
 
@@ -170,7 +179,7 @@ pulsegrid/
 | M0 | 환경 구성 | ✅ |
 | M1 | 수집기 프로토타입 | ✅ |
 | M2 | 서버 + 단일 기기 연동 | ✅ |
-| M3 | 다중 기기 연동 | ⬜ |
+| M3 | 다중 기기 연동 | ✅ |
 | M4 | 대시보드 완성 (**v1.0**) | ⬜ |
 | M5 | 히스토리 저장 | ⬜ |
 | M6 | 확장 지표 (디스크 / 배터리) | ⬜ |
