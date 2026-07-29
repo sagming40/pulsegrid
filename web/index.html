@@ -2,13 +2,86 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>PulseGrid (임시 화면)</title>
+    <title>PulseGrid (임시 화면 - M3)</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        .device-card {
+            display: inline-block;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px;
+            width: 220px;
+            vertical-align: top;
+            transition: opacity 0.3s;
+        }
+        /* offline 상태일 때 카드 전체를 흐리게 (04_ui_design.md 4.3절 규칙) */
+        .device-card.offline {
+            opacity: 0.4;
+        }
+        .status-badge {
+            font-weight: bold;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        .status-badge.online { background: #4caf50; color: white; }
+        .status-badge.offline { background: #999; color: white; }
+    </style>
 </head>
 <body>
     <h1>PulseGrid — 확인용 임시 화면</h1>
-    <div id="output">연결 대기 중...</div>
+    <div id="cards-container"></div>
 
     <script>
+        // ─────────────────────────────────────────────────────────
+        // 게시판(카드)들을 담아두는 창고
+        // key = device_id, value = 그 기기의 카드를 가리키는 HTML 요소
+        // 이렇게 저장해두면, 매번 새로 안 만들고 "이미 있으면 재사용"이 가능함
+        // ─────────────────────────────────────────────────────────
+        const deviceCards = {};
+
+        function getOrCreateCard(deviceId) {
+            // 이미 이 기기의 게시판(카드)이 있으면 그걸 그대로 반환
+            if (deviceCards[deviceId]) {
+                return deviceCards[deviceId];
+            }
+            // 없으면 새로 생성하여 화면에 붙임
+            const card = document.createElement("div");
+            card.className = "device-card";
+            card.innerHTML = `
+                <h3>${deviceId}</h3>
+                <span class="status-badge online">online</span>
+                <p class="cpu-line">CPU: - % (-°C)</p>
+                <p class="ram-line">RAM: - %</p>
+            `;
+            document.getElementById("cards-container").appendChild(card);
+            deviceCards[deviceId] = card;
+            return card;
+        }
+
+        function updateCardMetrics(deviceId, metric) {
+            const card = getOrCreateCard(deviceId);
+            card.querySelector(".cpu-line").innerText = 
+                `CPU: ${metric.cpu.usage}% (${metric.cpu.temp}°C)`;
+            card.querySelector(".ram-line").innerText = 
+                `RAM: ${metric.ram.usage}%`;
+        }
+
+        function updateCardStatus(deviceId, status) {
+            const card = getOrCreateCard(deviceId);
+            const badge = card.querySelector(".status-badge");
+            badge.innerText = status;
+            badge.className = `status-badge ${status}`;   // online 또는 offline 클래스
+
+            // 카드 전체에 offline 클래스를 붙였다 뗐다 (흐리게 처리용)
+            if (status === "offline") {
+                card.classList.add("offline");
+            } else {
+                card.classList.remove("offline");
+            }
+        }
+
         // 브라우저 → 서버 "통화 계속 연결해두기" 요청
         // window.location.hostname = 지금 이 페이지에 접속한 주소를 그대로 재사용
         // (데스크탑에서 열었으면 127.0.0.1, 노트북에서 열었으면 192.168.219.105로 자동 대응)
@@ -18,11 +91,19 @@
         ws.onmessage = (event) => {
             const message = JSON.parse(event.data);   // 문자열로 온 메시지를 다시 객체로 변환
 
-            // metric_update 타입일 때만 화면 갱신 (지금은 snapshot 무시)
+            if (message.type === "snapshot") {
+                // 연결 직후 한 번, 지금까지 서버가 알고 있던 모든 기기 정보를 한꺼번에 반영
+                message.data.forEach((metric) => {
+                    updateCardMetrics(metric.device_id, metric);
+                });
+            }
+            
             if (message.type === "metric_update") {
-                const metric = message.data;
-                document.getElementById("output").innerText = 
-                    `[${metric.device_id}] CPU: ${metric.cpu.usage}% (${metric.cpu.temp}°C)`;
+                updateCardMetrics(message.data.device_id, message.data);
+            }
+
+            if (message.type === "device_status") {
+                updateCardStatus(message.data.device_id, message.data.status);
             }
         }
     </script>
