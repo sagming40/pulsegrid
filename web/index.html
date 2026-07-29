@@ -11,16 +11,14 @@
             background: #f5f5f5; 
         }
         #cards-container {
-            display: flex;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 16px;
         }
         .device-card {
-            display: inline-block;
             border: 1px solid #ddd;
             border-radius: 10px;
             padding: 16px;
-            width: 260px;
             transition: opacity 0.3s;
         }
         /* offline 상태일 때 카드 전체를 흐리게 (04_ui_design.md 4.3절 규칙) */
