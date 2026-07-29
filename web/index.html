@@ -100,6 +100,15 @@
         .card-footer .dim {
             color: #bbb;
         }
+
+        /* 게이지 필 색상 3단계 — 값에 따라 JS가 클래스를 갈아 끼움 */
+        .gauge-fill.level-normal { background: #3a86ff; }
+        .gauge-fill.level-warning { background: #f4b400; }
+        .gauge-fill.level-danger { background: #e63946; }
+
+        /* 온도 숫자 색상 3단계 */
+        .metric-temp.level-warning { color: #b8860b; font-weight: bold; }
+        .metric-temp.level-danger { color: #e63946; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -183,6 +192,23 @@
             return card;
         }
 
+        // 사용률(%) 값을 넣으면 "정상/주의/위험" 중 어떤 상태인지 판정하는 함수
+        // 비유: 체온계 — 숫자를 보고 "체온이 정상/미열/고열 중 어떤 상태인지" 구분하는 역할
+        function usageLevel(value) {
+            if (value === null || value === undefined) return "normal";
+            if (value >= 90) return "danger";
+            if (value >= 75) return "warning";
+            return "normal";
+        }
+
+        // 온도(C) 값을 넣으면 "정상/주의/위험" 판정
+        function tempLevel(value) {
+            if (value === null || value === undefined) return "normal";
+            if (value >= 85) return "danger";
+            if (value >= 70) return "warning";
+            return "normal";
+        }
+
         // 지표 행 하나(CPU/GPU/RAM)를 갱신하는 공용 함수
         // → 택배 상자 하나를 열어서 "사용률"과 "온도" 라벨을 붙이고, 게이지 바 길이를 조절하는 역할
         function updateMetricRow(card, metricName, usage, temp) {
@@ -192,10 +218,19 @@
             const tempEl = row.querySelector(".metric-temp");
             if (tempEl) {
                 tempEl.innerText = `· ${formatTemp(temp)}`;
+                // 기존에 붙어있던 level 클래스를 다 떼고, 지금 온도에 맞는 클래스만 다시 붙임
+                tempEl.classList.remove("level-warning", "level-danger");
+                const tLevel = tempLevel(temp);
+                if (tLevel !== "normal") {
+                    tempEl.classList.add(`level-${tLevel}`);
+                }
             }
 
             const fill = row.querySelector(".gauge-fill");
             fill.style.width = `${usage ?? 0}%`;
+            // 게이지 바 — 기존 색깔 클래스를 떼고 새로 판정한 색 클래스를 붙임
+            fill.classList.remove("level-normal", "level-warning", "level-danger");
+            fill.classList.add(`level-${usageLevel(usage)}`); 
         }
 
         function updateCardMetrics(deviceId, metric) {
