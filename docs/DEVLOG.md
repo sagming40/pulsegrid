@@ -36,19 +36,21 @@
 
 ---
 
-<!--
-다음 세션부터 이 형식으로 위에 추가할 것:
+## 2026-07-29 — M1 완료: 수집기 프로토타입
 
-## YYYY-MM-DD — 한 줄 요약
-
-**관련 마일스톤**: M?
+**관련 마일스톤**: M1 (수집기 프로토타입) → 완료
 
 **한 일**
--
+- LibreHardwareMonitor JSON 재귀 탐색 함수(`find_by_sensor_id`) 구현
+- SensorId 기반 매핑 테이블(`SENSOR_MAP`)로 CPU/GPU/RAM 값 추출
+- API 명세서 MetricPayload 형식으로 변환 후 2초 간격 터미널 출력 확인
 
 **막혔던 점 / 트러블슈팅**
--
+- Text(이름)로 센서를 찾으려 하니 GPU Core(RTX 5070 vs 내장그래픽), Memory(실RAM vs 가상메모리) 등 이름 중복 문제 발생 → SensorId(고유 경로) 기반으로 변경
+- RAM 사용률이 계속 None으로 나와 진단 함수까지 만들었는데, 알고 보니 SENSOR_MAP 값을 실험적으로 바꾸다 생긴 오타(`/ram/load/1` → `/ram/load/0`)가 원인이었음
+- 교훈: 문제 원인 파악할 땐 여러 곳을 동시에 바꾸지 말고 한 번에 하나씩 검증할 것
 
 **다음에 할 일**
--
--->
+- M2 시작: FastAPI 서버 구축, `POST /api/v1/metrics` 구현, WebSocket 브로드캐스트
+
+---
