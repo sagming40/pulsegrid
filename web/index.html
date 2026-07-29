@@ -10,7 +10,9 @@
 
     <script>
         // 브라우저 → 서버 "통화 계속 연결해두기" 요청
-        const ws = new WebSocket("ws://127.0.0.1:8000/ws/dashboard");
+        // window.location.hostname = 지금 이 페이지에 접속한 주소를 그대로 재사용
+        // (데스크탑에서 열었으면 127.0.0.1, 노트북에서 열었으면 192.168.219.105로 자동 대응)
+        const ws = new WebSocket(`ws://${window.location.hostname}:8000/ws/dashboard`);
 
         // 서버에서 어떤 메시지가 올 때마다 이 코드가 실행됨
         ws.onmessage = (event) => {
