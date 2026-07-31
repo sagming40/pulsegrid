@@ -18,6 +18,7 @@ class RamMetric(BaseModel):
     total_gb: Optional[float] = None
     
 class DiskMetric(BaseModel):
+    id: str   # ⭐ Task 6-1(M6) 추가
     usage: Optional[float] = None
     temp: Optional[float] = None
     
@@ -37,5 +38,5 @@ class MetricPayload(BaseModel):
     gpu: Optional[GpuMetric] = None
     
     # disk, battery는 X(선택) — 아예 필드를 보내지 않아도 괜찮음
-    disk: Optional[DiskMetric] = None
+    disk: Optional[list[DiskMetric]] = None   # ⭐ Task 6-1(M6) 수정 — 상자 하나 → 상자 담는 리스트
     battery: Optional[BatteryMetric] = None                

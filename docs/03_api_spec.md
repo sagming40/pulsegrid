@@ -66,7 +66,7 @@
 | `cpu` | object | O | CPU 지표 |
 | `gpu` | object \| null | O | GPU 지표 (없으면 `null`) |
 | `ram` | object | O | 메모리 지표 |
-| `disk` | object \| null | X | 디스크 지표 (P1) |
+| `disk` | array \| null | X | 디스크 지표 목록 (P1, 기기마다 개수 다름) |
 | `battery` | object \| null | X | 배터리 지표 (P1, 노트북 한정) |
 
 #### cpu 객체
@@ -91,10 +91,11 @@
 | `used_gb` | float \| null | GB | 사용 중인 용량 |
 | `total_gb` | float \| null | GB | 전체 용량 |
 
-#### disk 객체 (P1)
+#### disk 배열의 각 항목 (P1)
 
 | 필드 | 타입 | 단위 | 설명 |
 |---|---|---|---|
+| `id` | string | - | 디스크 식별자 (예: `main`, `sub`) |
 | `usage` | float \| null | % | 디스크 사용 공간 비율 |
 | `temp` | float \| null | °C | 디스크 온도 |
 
@@ -135,7 +136,10 @@ POST /api/v1/metrics
   "cpu": { "usage": 1.4, "temp": 46.0 },
   "gpu": { "usage": 0.0, "temp": 37.7 },
   "ram": { "usage": 32.0, "used_gb": 10.0, "total_gb": 32.0 },
-  "disk": { "usage": 44.1, "temp": 51.0 },
+  "disk": [
+      { "id": "main", "usage": 44.1, "temp": 51.0 },
+      { "id": "sub", "usage": 30.2, "temp": 42.0 }
+    ],
   "battery": null
 }
 ```
@@ -177,7 +181,10 @@ GET /api/v1/devices
       "cpu": { "usage": 1.4, "temp": 46.0 },
       "gpu": { "usage": 0.0, "temp": 37.7 },
       "ram": { "usage": 32.0, "used_gb": 10.0, "total_gb": 32.0 },
-      "disk": { "usage": 44.1, "temp": 51.0 },
+      "disk": [
+        { "id": "main", "usage": 44.1, "temp": 51.0 },
+        { "id": "sub", "usage": 30.2, "temp": 42.0 }
+      ],
       "battery": null
     },
     {
@@ -188,7 +195,10 @@ GET /api/v1/devices
       "cpu": { "usage": 19.7, "temp": 67.0 },
       "gpu": { "usage": 1.1, "temp": null },
       "ram": { "usage": 79.0, "used_gb": 12.3, "total_gb": 16.0 },
-      "disk": { "usage": 54.3, "temp": 55.0 },
+      "disk": [
+        { "id": "main", "usage": 44.1, "temp": 51.0 },
+        { "id": "sub", "usage": 30.2, "temp": 42.0 }
+      ],
       "battery": { "level": 96.9, "charging": false }
     }
   ]
@@ -329,7 +339,10 @@ WS /ws/dashboard
     "cpu": { "usage": 21.3, "temp": 68.0 },
     "gpu": { "usage": 1.4, "temp": null },
     "ram": { "usage": 79.2, "used_gb": 12.4, "total_gb": 16.0 },
-    "disk": { "usage": 54.3, "temp": 55.0 },
+    "disk": [
+      { "id": "main", "usage": 44.1, "temp": 51.0 },
+      { "id": "sub", "usage": 30.2, "temp": 42.0 }
+    ],
     "battery": { "level": 96.8, "charging": false }
   }
 }
