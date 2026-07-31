@@ -129,7 +129,7 @@
 | 항목 | 내용 |
 |---|---|
 | 목표 | 포트폴리오로서의 완성도 확보 |
-| 주요 작업 | 1. README 작성 (개요, 구조도, 실행 방법)<br>2. 스크린샷 / GIF 캡처<br>3. `requirements.txt` 정리<br>4. 설정 파일 예시(`config.example.json`) 제공 |
+| 주요 작업 | 1. README 작성 (개요, 구조도, 실행 방법)<br>2. 스크린샷 / GIF 캡처<br>3. `requirements.txt` 정리<br>4. 설정 파일 예시(`config.example.json`) 제공<br>5. `web/index.html`의 `<style>`/`<script>`를 `web/style.css`/`web/app.js`로 분리 |
 | **완료 기준** | 프로젝트를 처음 보는 사람이 README만 보고 실행할 수 있는 상태 |
 
 ---
