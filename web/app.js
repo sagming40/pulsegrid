@@ -71,6 +71,7 @@ function getOrCreateCard(deviceId, deviceName) {
             `;
     document.getElementById("cards-container").appendChild(card);
     deviceCards[deviceId] = card;
+    addDeviceOption(deviceId);   // ⭐ Task 5-4-b(M5) 추가  
     return card;
 }
 
@@ -202,7 +203,8 @@ function getOrCreateDataset(deviceId) {
 
 // 기록계 역할 — 누가 소식을 보내든, 최소 1.8초 이상이 지나야만 새 점을 찍음
 function maybePushChartPoint(deviceId, cpuUsage) {
-    lastKnownUsage[deviceId] = cpuUsage;    // 값은 일단 항상 최신으로 저장해둠
+    lastKnownUsage[deviceId] = cpuUsage;   // 값은 일단 항상 최신으로 저장해둠
+    if (viewMode === "history") return;    // ⭐ Task 5-4-b(M5) 추가: history 보는 중엔 실시간 갱신
 
     const now = Date.now();
     if (now - lastChartTickAt < CHART_TICK_INTERVAL_MS) return;  // 너무 최근에 찍었으면 이번엔 건너뜀
@@ -285,3 +287,72 @@ function connectWebSocket() {
 }
 
 connectWebSocket();   // 페이지 로딩 시 첫 연결 시작
+
+// ─────────────────────────
+// 히스토리 조회 (Task 5-4-b)
+// ─────────────────────────
+let viewMode = "live"   // "live"(CCTV 모드) 또는 "history"(녹화 재생 모드)
+
+const deviceSelectEl = document.getElementById("history-device-select");
+const rangeSelectEl = document.getElementById("history-range-select");
+
+// 드롭다운에 기기 목록을 채워넣는 함수. 이미 등록된 기기면 중복 추가 X
+function addDeviceOption(deviceId) {
+    const alreadyExists = [...deviceSelectEl.options].some((opt) => opt.value === deviceId);
+    if (alreadyExists) return;
+
+    const option = document.createElement("option");
+    option.value = deviceId;
+    option.innerText = deviceId;
+    deviceSelectEl.appendChild(option);
+} 
+
+// 창고지기(API)한테 전화를 걸어서 "이 기기, 최근 0분치 주세요" 라고 요청 후 그래프에 그림
+async function loadHistoryChart(deviceId, minutes) {
+    const res = await fetch(`/api/v1/history?device_id=${deviceId}&minutes=${minutes}`);
+    const result = await res.json();
+
+    if (!result.success) {
+        alert(`히스토리 조회 실패: ${result.error?.message ?? "알 수 없는 오류"}`);
+        return;
+    }
+
+    const rows = result.data;
+
+    // 실시간 그래프를 통째로 "재생 화면"으로 갈아 끼움
+    trendChart.data.labels = rows.map((row) =>
+        new Date(row.recorded_at).toLocaleTimeString("ko-KR", { hour12: false })
+    );
+    trendChart.data.datasets = [{
+        deviceId,
+        label: `${deviceId} (과거 기록)`,
+        data: rows.map((row) => row.cpu_usage),
+        borderColor: getDeviceColor(deviceId),
+        backgroundColor: getDeviceColor(deviceId),
+        tension: 0.3,
+        pointRadius: 0
+    }];
+    trendChart.update();
+}
+
+// 드롭다운 중 하나라도 바뀌게 되면 이 함수가 실행됨
+function applyViewMode() {
+    const range = rangeSelectEl.value;
+
+    if (range === "live") {
+        viewMode = "live";
+        // CCTV 모드로 복귀 — 화면 비우고, 다음 실시간 신호부터 다시 채워짐
+        trendChart.data.labels = [];
+        trendChart.data.datasets = [];
+        trendChart.update();
+        return;
+    }
+    viewMode = "history";
+    const deviceId = deviceSelectEl.value;
+    if (!deviceId) return;   // 아직 연결된 기기가 하나도 없으면 아무것도 하지 않음
+
+    loadHistoryChart(deviceId, Number(range));
+}
+
+deviceSelectEl.addEventListener("change", applyViewMode);
+rangeSelectEl.addEventListener("change", applyViewMode);
