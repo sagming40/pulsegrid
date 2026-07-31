@@ -1,0 +1,140 @@
+body {
+    font-family: sans-serif;
+    padding: 20px;
+    background: #f5f5f5;
+}
+
+#cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+}
+
+.device-card {
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px;
+    transition: opacity 0.3s;
+}
+
+/* offline 상태일 때 카드 전체를 흐리게 (04_ui_design.md 4.3절 규칙) */
+.device-card.offline {
+    opacity: 0.4;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.device-icon {
+    font-size: 1.4em;
+}
+
+.device-title {
+    flex: 1;
+}
+
+.device-name {
+    font-weight: bold;
+}
+
+.device-hostname {
+    font-size: 0.75em;
+    color: #888;
+}
+
+.status-badge {
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75em;
+}
+
+.status-badge.online {
+    background: #4caf50;
+    color: white;
+}
+
+.status-badge.offline {
+    background: #999;
+    color: white;
+}
+
+.metric-row {
+    margin-bottom: 10px;
+}
+
+.metric-label {
+    display: flex;
+    gap: 6px;
+    font-size: 0.9em;
+    margin-bottom: 4px;
+}
+
+.metric-label span:first-child {
+    font-weight: bold;
+    width: 32px;
+}
+
+.metric-temp {
+    color: #666;
+}
+
+/* 게이지 트랙 = 주유소 계기판의 "빈 눈금판" 부분. 안이 비어있는 틀만 있는 상태 */
+.gauge-track {
+    background: #eee;
+    border-radius: 4px;
+    height: 8px;
+    overflow: hidden;
+}
+
+/* 게이지 필 = 눈금판 안을 채우는 바늘/막대. width%로 채워지는 양을 조절함 */
+.gauge-fill {
+    height: 100%;
+    width: 0%;
+    background: #999;
+    /* 임계치 색상은 Task 4-2에서 조건별로 바꿀 예정 */
+    transition: width 0.3s;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    color: #555;
+    border-top: 1px solid #eee;
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+/* 센서가 아예 없는 항목(예: 데스크탑의 배터리 항목)은 흐린색 */
+.card-footer .dim {
+    color: #bbb;
+}
+
+/* 게이지 필 색상 3단계 — 값에 따라 JS가 클래스를 갈아 끼움 */
+.gauge-fill.level-normal {
+    background: #3a86ff;
+}
+
+.gauge-fill.level-warning {
+    background: #f4b400;
+}
+
+.gauge-fill.level-danger {
+    background: #e63946;
+}
+
+/* 온도 숫자 색상 3단계 */
+.metric-temp.level-warning {
+    color: #b8860b;
+    font-weight: bold;
+}
+
+.metric-temp.level-danger {
+    color: #e63946;
+    font-weight: bold;
+}

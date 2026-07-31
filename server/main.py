@@ -187,3 +187,8 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception:
         # 브라우저가 창을 닫거나 연결이 끊기면 이 쪽으로 옴
         connected_clients.remove(websocket)   # 명단에서 제거 — 나간 손님 명단에서 지우기           
+
+# web 폴더 안의 나머지 파일들(style.css, app.js 등)을 그대로 꺼내주는 창구
+# 비유: "/" 창구는 내가 직접 안내(FileResponse)하지만,
+#      그 외 파일 요청은 이 창고지기(StaticFiles)한테 통째로 맡기는 것
+app.mount("/", StaticFiles(directory="../web"), name="static")
