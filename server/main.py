@@ -6,12 +6,14 @@ from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import asyncio
 from models import MetricPayload
+from db import save_metric_snapshot
 
 # ─────────────────────────────────────────────────────────────
 # 순찰(백그라운드 작업) 관련 설정값
 # ─────────────────────────────────────────────────────────────
-OFFLINE_THRESHOLD_SECONDS = 10   # 이 시간(초) 넘게 연락이 없으면 offline 처리
-PATROL_INTERVAL_SECONDS = 3      # 순찰을 도는 주기 (10초보다 짧아야 감지가 늦지 않음)
+OFFLINE_THRESHOLD_SECONDS = 10       # 이 시간(초) 넘게 연락이 없으면 offline 처리
+PATROL_INTERVAL_SECONDS = 3          # 순찰을 도는 주기 (10초보다 짧아야 감지가 늦지 않음)
+HISTORY_SAVE_INTERVAL_SECONDS = 60   # 1분마다 창고에 사진 찍어서 저장
 
 
 # ─────────────────────────────────────────────────────────────
@@ -22,9 +24,11 @@ PATROL_INTERVAL_SECONDS = 3      # 순찰을 도는 주기 (10초보다 짧아�
 async def lifespan(app: FastAPI):
     # 서버 켜지는 순간: 순찰 함수를 "백그라운드"에 등록 (여기서 실행하고 바로 다음 줄로)
     patrol_task = asyncio.create_task(patrol_offline_devices())
+    history_task = asyncio.create_task(save_history_periodically())   # ⭐ 추가
     yield   # 여기서부터 실제로 서버가 손님(요청)을 받기 시작함
-    # 서버가 꺼지는 순간: 순찰 알배생도 같이 퇴근
+    # 서버가 꺼지는 순간: 순찰 알바생도 같이 퇴근
     patrol_task.cancel()
+    history_task.cancel()   # ⭐ 추가
 
 # 매니저(app) 한 명 채용
 # 이 app이 앞으로 모든 주소(엔드포인트)를 관리하게 됨
@@ -111,6 +115,28 @@ async def patrol_offline_devices():
                     "type": "device_status",
                     "data": {"device_id": device_id, "status": "offline"}
                 })
+                
+                
+async def save_history_periodically():
+    """
+    1분마다 한 번씩 깨어나서, 그 순간 latest_metrics에 있는
+    모든 기기의 최신값을 창고(DB)에 스냅샷으로 저장함.
+    """                 
+    while True:
+        await asyncio.sleep(HISTORY_SAVE_INTERVAL_SECONDS)
+        
+        # 그 순간 latest_metrics 안에 있는 기기들을 한 명씩 창고에 기록
+        for device_id, payload in latest_metrics.items():
+            # ── 새로 추가된 조건 ──
+            # online이 아닌 기기(offline 또는 아직 상태 기록 자체가 없는 기기)는 건너뜀
+            if device_status.get(device_id) != "online":
+                continue
+            
+            try:
+                save_metric_snapshot(device_id, payload)
+            except Exception as e:
+                # 창고 쪽 사고(DB Error)가 나도 서버 전체가 멈추면 안되므로 여기서 잡아둠
+                print(f"[history save error] {device_id}: {e}")    
 
 
 @app.websocket("/ws/dashboard")

@@ -30,6 +30,7 @@ server/config.json
 .env.*
 !.env.example
 *.local.json
+db_config.json
 
 # ===== 데이터베이스 =====
 *.db
