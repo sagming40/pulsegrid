@@ -341,6 +341,7 @@ function applyViewMode() {
 
     if (range === "live") {
         viewMode = "live";
+        deviceSelectEl.disabled = true;   // ⭐ Task 5-4-b(M5) 추가(수정) : 기기 드롭다운 비활성화
         // CCTV 모드로 복귀 — 화면 비우고, 다음 실시간 신호부터 다시 채워짐
         trendChart.data.labels = [];
         trendChart.data.datasets = [];
@@ -348,6 +349,7 @@ function applyViewMode() {
         return;
     }
     viewMode = "history";
+    deviceSelectEl.disabled = false;   // ⭐ Task 5-4-b(M5) 추가(수정) : 히스토리 모드에선 다시 활성화
     const deviceId = deviceSelectEl.value;
     if (!deviceId) return;   // 아직 연결된 기기가 하나도 없으면 아무것도 하지 않음
 
