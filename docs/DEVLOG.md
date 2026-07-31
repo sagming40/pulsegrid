@@ -143,3 +143,42 @@
 - M7(문서화/배포 정리)에서 `<style>`은 `web/style.css`로, `<script>`는 `web/app.js`로 분리해 원래 계획했던 구조와 맞출 예정
 
 ---
+
+## 2026-07-31 — M5 완료: 히스토리 저장
+
+**관련 마일스톤**: M5 (히스토리 저장) → 완료
+
+**한 일**
+- MariaDB Connector/C 3.4.9(Complete) 설치, `mariadb` 파이썬 드라이버 연동
+- `device_metrics_history` 테이블 설계 — CPU/GPU/RAM/Disk를 평탄화된 컬럼으로, `device_id + recorded_at` 복합 인덱스 추가 (`server/schema.sql`)
+- `server/db.py` 작성 — `save_metric_snapshot()`(1분 간격 저장), `get_history()`(기간 조회)
+- `main.py` lifespan에 `save_history_periodically()` 백그라운드 태스크 등록, `device_status`가 `online`인 기기만 저장하도록 조건 추가 (offline 기기 값이 무한 복제되던 문제 방지)
+- `GET /api/v1/history?device_id=&minutes=` 엔드포인트 구현, 기존 API 공통 응답 형식(`success`/`data`/`error`) 그대로 적용
+- `web/index.html`의 `<style>`/`<script>`를 `web/style.css`/`web/app.js`로 분리 (원래 M7 예정 작업이었으나 선행 처리), `main.py`에 `StaticFiles` 마운트 추가
+- 프론트엔드에 "기기"/"기간"(실시간·1시간·6시간·24시간) 드롭다운 추가 — 기간 선택 시 `GET /api/v1/history` 호출해 과거 기록으로 그래프 교체, 실시간 선택 시 기존 다중 기기 실시간 그래프로 복귀
+- 데스크탑+노트북 양쪽 기기로 저장/조회/모드 전환 전체 흐름 검증 완료
+
+**막혔던 점 / 트러블슈팅**
+- `db.py` 작성 중 `json.load(f)`를 `json,load(f)`로 오타 → `NameError`
+- `save_history_periodically()`에 online 여부 확인 로직이 빠져있어, agent를 꺼도 서버가 마지막 값을 무한정 복제 저장하는 버그 발견 → `device_status` 체크 추가로 수정. 단, `patrol_offline_devices`의 offline 판정에 최대 13초 유예가 있어 그 사이 중복 스냅샷이 최대 1개 발생할 수 있음 — 허용 가능한 범위로 판단하고 넘어감
+- `index.html`/`style.css`/`app.js` 분리 직후 정적 파일 404 발생 → `main.py`에 `StaticFiles` 마운트가 없었던 게 원인, 다른 라우트들 밑에 `app.mount("/", StaticFiles(...))` 추가로 해결
+- `loadHistoryChart(deviceId, Number(range))`에서 콤마를 마침표로 오타 → `TypeError`
+- 실시간 모드에서 "기기" 드롭다운을 골라도 아무 반응이 없어 조작 가능한 것처럼 보이는 UX 문제 발견 → 실시간 모드에선 드롭다운을 `disabled` 처리하도록 수정
+- 교훈: `json,load`, `deviceId. Number` 등 마침표/콤마 오타가 두 번 반복됨 — 타이핑 후 한 번 더 훑어보는 습관 필요
+
+**다음에 할 일**
+- M6(확장 지표) 또는 M7(문서화/배포 정리) 중 진행 예정
+
+---
+
+**기타 메모**
+> `03_api_spec.md`에 설계된 `GET /api/v1/devices`, `/api/v1/devices/{id}`, `/api/v1/health`를 구현하지 않은 이유
+
+- 세 엔드포인트 모두 2026-07-28 기획 단계에서 설계했으나, M2~M4를 거치며 실제로 만들 필요가 없어짐
+- `/devices`, `/devices/{id}`: M2에서 `WS /ws/dashboard`를 설계할 때 "연결 직후 `snapshot` 메시지로 전체 기기 최신 상태 전송"을 이미 포함시켰음 — REST로 초기 조회 후 WebSocket 연결하는 2단계 흐름 대신, WebSocket 하나로 초기 상태+실시간 갱신을 모두 처리
+  - REST+WS 병행 시 "REST 응답 시점과 WebSocket 연결 시점 사이의 데이터 갱신을 놓칠 수 있는" 동기화 문제를 애초에 피할 수 있었음
+  - `latest_metrics` 딕셔너리를 유일한 진실 공급원으로 유지할 수 있어 서버/프론트엔드 양쪽 로직이 단순해짐
+- `/health`: 외부 모니터링 도구 연동을 계획했던 용도인데, 1인 개인 프로젝트 특성상 아직 그런 외부 모니터링 자체가 없어 필요성이 생기지 않음. M8(Flutter 모바일 클라이언트) 등에서 연결 확인 용도로 필요해지면 그때 재검토
+- `03_api_spec.md`는 계획 문서 성격이라 지금 당장 수정하지 않고, M6/M7 문서 정리 단계에서 실제 구현 현황에 맞게 갱신 예정 (`history` 엔드포인트의 쿼리 파라미터가 `from`/`to`/`metric`에서 `minutes`로 단순화된 것도 함께 반영)
+
+---
