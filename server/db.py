@@ -57,3 +57,40 @@ def save_metric_snapshot(device_id: str, payload: MetricPayload):
     conn.commit()   # "진짜 창고에 넣어라"는 확정 도장
     cursor.close()
     conn.close()    # 연결 끊기 — 매번 연결을 닫아서 자원을 낭비하지 않음         
+
+
+def get_history(device_id: str, minutes: int = 60) -> list[dict]:
+    """
+    지정한 기기(device_id)의, 지금부터 `minutes`분 전까지의 기록을
+    오래된 순서(시간순)로 꺼내옴.
+    
+    비유: 창고지기한테 "3번 선반, 지난 0분치 물건 모두 꺼내주시는데
+    오래된 것부터 순서대로 주세요"라고 요청하는 것.
+    """
+    conn = get_connection()
+    # dictionary=True → 결과를 (1, 'desktop', ...) Tuple이 아니라
+    # {"id": 1, "device_id": "desktop", ...} Dictionary로 받음
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute(
+        """
+        SELECT recorded_at, cpu_usage, cpu_temp,
+               gpu_usage, gpu_temp, ram_usage,
+               disk_usage, disk_temp
+        FROM device_metrics_history
+        WHERE device_id = %s
+          AND recorded_at >= NOW() - INTERVAL %s MINUTE
+        ORDER BY recorded_at ASC         
+        """,
+        (device_id, minutes),
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    # recorded_at은 파이썬 datetime 객체로 넘어오는데,
+    # JSON으로 내보낼 때는 문자열이어야 하므로 ISO 형식 문자열로 변환
+    for row in rows:
+        row["recorded_at"] = row["recorded_at"].isoformat()
+    
+    return rows    

@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import asyncio
 from models import MetricPayload
-from db import save_metric_snapshot
+from db import save_metric_snapshot, get_history
 
 # ─────────────────────────────────────────────────────────────
 # 순찰(백그라운드 작업) 관련 설정값
@@ -59,6 +59,29 @@ async def broadcast(message: dict):
 @app.get("/")
 def read_root():
     return FileResponse("../web/index.html")
+
+
+@app.get("/api/v1/history")
+def read_history(device_id: str, minutes: int =60):
+    """
+    GET /api/v1/history?device_id=desktop&minutes=60
+    특정 기기의 지난 N분간 히스토리를 시간 순으로 반환.
+    """
+    # minutes가 0 이하거나 너무 크게 들어오면 막아주기 (API 명세서 400 INVALID_PAYLOAD)
+    if minutes <= 0:
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_PAYLOAD",
+                "message": "minutes는 1 이상이어야 합니다."
+            }
+        }
+    
+    rows = get_history(device_id, minutes)
+    return {
+        "success": True,
+        "data": rows
+    }    
 
 
 @app.post("/api/v1/metrics")
