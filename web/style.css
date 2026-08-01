@@ -118,6 +118,14 @@ body {
     gap: 2px;
 }
 
+/* ⭐ M6.5 Task 6.5-6 — 전력/배터리를 세로로 쌓는 오른쪽 구역 */
+.energy-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;  /* 오른쪽 정렬 — 카드 우측 끝에 붙게 */
+    gap: 2px;   
+}
+
 /* 센서가 아예 없는 항목(예: 데스크탑의 배터리 항목)은 흐린색 */
 .card-footer .dim {
     color: #bbb;

@@ -66,7 +66,10 @@ function getOrCreateCard(deviceId, deviceName) {
                 
                 <div class="card-footer">
                     <div class="disk-summary-list"></div>
-                    <span class="battery-summary">배터리 —</span>
+                    <div class="energy-summary">
+                        <span class="power-summary">⚡ —</span>
+                        <span class="battery-summary">배터리 —</span>
+                    </div>    
                 </div>    
             `;
     document.getElementById("cards-container").appendChild(card);
@@ -142,6 +145,21 @@ function updateCardMetrics(deviceId, metric) {
         line.className = "disk-summary dim";
         line.innerText = "디스크 —";
         diskContainer.appendChild(line);
+    }
+
+    // ⭐ M6.5 Task 6.5-6 — CPU+GPU 전력(W) 합산 표시
+    const powerEl = card.querySelector(".power-summary");
+    const cpuPower = metric.cpu.power;
+    const gpuPower = metric.gpu ? metric.gpu.power : null;
+
+    // cpu_power가 있어야만 의미 있는 합산이 가능 (기준값이 없으면 계산 자체를 포기)
+    if (cpuPower !== null && cpuPower !== undefined) {
+        const totalPower = cpuPower + (gpuPower ?? 0);   // gpu 전력이 없으면 0으로 취급해 더함
+        powerEl.innerText = `⚡ ${totalPower.toFixed(1)}W`;
+        powerEl.classList.remove("dim");
+    } else {
+        powerEl.innerText = "⚡ —";
+        powerEl.classList.add("dim");
     }
 
     const batteryEl = card.querySelector(".battery-summary");
