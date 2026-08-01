@@ -74,6 +74,8 @@ def collect_metrics():
     cpu_temp = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["cpu_temp"]))
     gpu_usage = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["gpu_usage"]))
     gpu_temp = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["gpu_temp"]))
+    cpu_power = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["cpu_power"])) 
+    gpu_power = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["gpu_power"]))
     ram_usage = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["ram_usage"]))
     ram_used = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["ram_used"]))
     ram_available = parse_value(find_by_sensor_id(raw_data, SENSOR_MAP["ram_available"]))
@@ -108,8 +110,8 @@ def collect_metrics():
         "device_id": DEVICE_ID,
         "device_name": DEVICE_NAME,
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "cpu": {"usage": cpu_usage, "temp": cpu_temp},
-        "gpu": {"usage": gpu_usage, "temp": gpu_temp},
+        "cpu": {"usage": cpu_usage, "temp": cpu_temp, "power": cpu_power},
+        "gpu": {"usage": gpu_usage, "temp": gpu_temp, "power": gpu_power},
         "ram": {"usage": ram_usage, "used_gb": ram_used, "total_gb": ram_total},
         "disk": disk_list if disk_list else None,   # 빈 리스트면 null 반환 (disk_map이 비어있는 극단적 상황 대비)
         "battery": battery_payload,   

@@ -7,10 +7,12 @@ from typing import Optional
 class CpuMetric(BaseModel):
     usage: Optional[float] = None   # 소수(float)여야 하고, 없으면(Optional) None 허용
     temp: Optional[float] = None
+    power: Optional[float] = None   # ⭐ M6.5 추가 — Watt 단위
     
 class GpuMetric(BaseModel):
     usage: Optional[float] = None
-    temp: Optional[float] = None    # 내장그래픽(Iris Xe)은 None   
+    temp: Optional[float] = None    # 내장그래픽(Iris Xe)은 None 
+    power: Optional[float] = None   # ⭐ M6.5 추가  
 
 class RamMetric(BaseModel):
     usage: Optional[float] = None
