@@ -405,16 +405,32 @@ const HEATMAP_DEVICES = [
     { id: "laptop", label: "노트북" },
 ];
 
-// 사용률(0 ~ 100)을 색깔 진하기로 바꾸는 함수
-// 비유: 커피 농도 — 0%는 맹물처럼 연하게, 100%는 진한 에스프레소처럼 진하게
-function usageToColor(usage) {
+// CSS 변수에 저장된 "R, G, B" 문자열을 숫자 배열로 변환
+// 비유: "235, 230, 250"이라는 종이 쪽지를 읽어서 [235, 230, 250] 숫자 3개로 정리하는 것
+function getColorVarTriplet(varName) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    return value.split(",").map(Number);
+}
+
+// 사용률(0 ~ 100)을 색깔로 바꾸는 함수 (v3 — 실제 데이터 최댓값을 기준으로 대비 강화)
+function usageToColor(usage, maxUsage) {
     if (usage === null || usage === undefined) {
-        return "#eee";  // 데이터가 아예 없는 시간대 = 빈 잔(연회색)
+        return "var(--color-track-bg)";  // 데이터 없음 = 테마의 기본 트랙 색 그대로
     }
-    // 0 ~ 1 사이 비율로 변환 (최소 0.15 기본값으로, 0%라도 칸이 안 보이진 않게)
-    const ratio = 0.15 + (usage / 100) * 0.85;
-    // 남색 계열(58, 12, 163)을 기본 색으로 삼고, 진하기(투명도)만 다르게
-    return `rgba(58, 12, 163, ${ratio.toFixed(2)})`;
+
+    // 0으로 나누기 방지 — 모든 값이 0이면 그냥 최소색 반환
+    const effectiveMax = maxUsage > 0 ? maxUsage : 1;
+    const ratio = Math.min(usage / effectiveMax, 1);  // 최댓값을 "100%"로 재정의
+
+    const low = getColorVarTriplet("--color-heatmap-low");
+    const high = getColorVarTriplet("--color-heatmap-high");
+
+    // R, G, B 채널을 각각 비율만큼 섞음 — 물감 두 개를 비율대로 섞는 것과 똑같은 계산
+    const r = Math.round(low[0] + (high[0] - low[0]) * ratio);
+    const g = Math.round(low[1] + (high[1] - low[1]) * ratio);
+    const b = Math.round(low[2] + (high[2] - low[2]) * ratio);
+
+    return `rgb(${r}, ${g}, ${b})`;
 }
 
 // 서버가 준 평평한 배열([{device_id, hour_slot, avg_cpu_usage}, ...])을
@@ -433,8 +449,20 @@ function buildHeatmapLookup(rows) {
     return lookup;
 }
 
+// 데이터 안에서 진짜 최댓값을 찾는 함수
+// 비유: 반 학생들이 키를 다 재보고 "가장 큰 애가 몇 cm인지" 확인 하는 것
+function findMaxUsage(rows) {
+    let max = 0;
+    rows.forEach((row) => {
+        if (row.avg_cpu_usage > max) {
+            max = row.avg_cpu_usage;
+        }
+    });
+    return max;
+} 
+
 // 실제로 화면에 히트맵을 그리는 함수
-function renderHeatmap(lookup) {
+function renderHeatmap(lookup, maxUsage) {   // ⭐ 두 번째 인자 추가
     const container = document.getElementById("heatmap-container");
     container.innerHTML = "";   // 기존에 그려둔 게 있으면 지우고 새로 그림
 
@@ -456,7 +484,7 @@ function renderHeatmap(lookup) {
 
             const cell = document.createElement("div");
             cell.className = "heatmap-cell";
-            cell.style.background = usageToColor(usage);
+            cell.style.background = usageToColor(usage, maxUsage);   // ⭐ maxUsage 같이 전달
             // 마우스를 올리면 정확한 값을 볼 수 있도록 title 속성 사용 (브라우저 기본 툴팁)
             cell.title = usage !== undefined
                 ? `${hour}시 · 평균 ${usage}%`
@@ -478,7 +506,8 @@ async function loadHeatmap() {
 
         if (result.success) {
             const lookup = buildHeatmapLookup(result.data);
-            renderHeatmap(lookup);
+            const maxUsage = findMaxUsage(result.data);   // ⭐ 추가
+            renderHeatmap(lookup, maxUsage);              // ⭐ maxUsage 전달
         }
     } catch (error) {
         console.error("히트맵 로딩 실패:", error);
