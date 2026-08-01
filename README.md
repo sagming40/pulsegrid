@@ -79,23 +79,32 @@
 
 ```
 pulsegrid/
-├── agent/              # 각 기기에서 실행되는 수집기
+│
+├── agent/                       # 각 기기에서 실행되는 수집기
 │   ├── agent.py
 │   └── config.example.json
-├── server/             # FastAPI 서버
+│
+├── server/                      # FastAPI 서버
+│   ├── db_config.example.json
+│   ├── db.py
 │   ├── main.py
 │   ├── models.py
-│   └── ...
-├── web/                # 웹 대시보드
+│   └── schema.sql
+│   
+├── web/                         # 웹 대시보드
 │   ├── index.html
 │   ├── app.js
 │   └── style.css
-├── docs/               # 설계 문서
+│
+├── docs/                        # 설계 문서
 │   ├── 01_requirements.md
 │   ├── 02_architecture.md
 │   ├── 03_api_spec.md
 │   ├── 04_ui_design.md
-│   └── 05_milestones.md
+│   ├── 05_milestones.md
+│   └── DEVLOG.md
+│
+├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
@@ -184,6 +193,7 @@ pulsegrid/
 | M4 | 대시보드 완성 (**v1.0**) | ✅ |
 | M5 | 히스토리 저장 | ✅ |
 | M6 | 확장 지표 (디스크 / 배터리) | ✅ |
+| M6.5 | 시각화 확장 (히트맵 + 날씨) | ⬜ |
 | M7 | 문서화 및 정리 | ⬜ |
 
 ---
