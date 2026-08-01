@@ -375,3 +375,97 @@ function applyViewMode() {
 
 deviceSelectEl.addEventListener("change", applyViewMode);
 rangeSelectEl.addEventListener("change", applyViewMode);
+
+// ─────────────────────────────────────────────
+// M6.5 Task 6.5-3 — 시간대별 CPU 히트맵
+// ─────────────────────────────────────────────
+
+// 히트맵에 표시할 기기 목록과 화면에 보여줄 이름표
+// (기기가 늘어나면 이 배열에 한 줄만 추가하면 됨)
+const HEATMAP_DEVICES = [
+    { id: "desktop", label: "데스크탑" },
+    { id: "laptop", label: "노트북" },
+];
+
+// 사용률(0 ~ 100)을 색깔 진하기로 바꾸는 함수
+// 비유: 커피 농도 — 0%는 맹물처럼 연하게, 100%는 진한 에스프레소처럼 진하게
+function usageToColor(usage) {
+    if (usage === null || usage === undefined) {
+        return "#eee";  // 데이터가 아예 없는 시간대 = 빈 잔(연회색)
+    }
+    // 0 ~ 1 사이 비율로 변환 (최소 0.15 기본값으로, 0%라도 칸이 안 보이진 않게)
+    const ratio = 0.15 + (usage / 100) * 0.85;
+    // 남색 계열(58, 12, 163)을 기본 색으로 삼고, 진하기(투명도)만 다르게
+    return `rgba(58, 12, 163, ${ratio.toFixed(2)})`;
+}
+
+// 서버가 준 평평한 배열([{device_id, hour_slot, avg_cpu_usage}, ...])을
+// "기기별 → 시간대별" Dictionary로 정리
+// 비유: 뒤죽박죽 섞인 택배 상자들을 "보내는 사람"별로 서랍에 나눠 넣는 것
+function buildHeatmapLookup(rows) {
+    const lookup = {};  // { desktop: { 9: 43.3, 14: 7.9, ... }, laptop: { ... } }
+
+    rows.forEach((row) => {
+        if (!lookup[row.device_id]) {
+            lookup[row.device_id] = {};
+        }
+        lookup[row.device_id][row.hour_slot] = row.avg_cpu_usage;
+    });
+
+    return lookup;
+}
+
+// 실제로 화면에 히트맵을 그리는 함수
+function renderHeatmap(lookup) {
+    const container = document.getElementById("heatmap-container");
+    container.innerHTML = "";   // 기존에 그려둔 게 있으면 지우고 새로 그림
+
+    HEATMAP_DEVICES.forEach((device) => {
+        const row = document.createElement("div");
+        row.className = "heatmap-row";
+
+        const label = document.createElement("div");
+        label.className = "heatmap-row-label";
+        label.innerText = device.label;
+        row.appendChild(label);
+
+        const cellsWrapper = document.createElement("div");
+        cellsWrapper.className = "heatmap-cells";
+
+        // 0시부터 23시까지 24칸을 순서대로 생성
+        for (let hour = 0; hour < 24; hour++) {
+            const usage = lookup[device.id]?.[hour];    // 데이터 없으면 undefined
+
+            const cell = document.createElement("div");
+            cell.className = "heatmap-cell";
+            cell.style.background = usageToColor(usage);
+            // 마우스를 올리면 정확한 값을 볼 수 있도록 title 속성 사용 (브라우저 기본 툴팁)
+            cell.title = usage !== undefined
+                ? `${hour}시 · 평균 ${usage}%`
+                : `${hour}시 · 데이터 없음`;
+
+            cellsWrapper.appendChild(cell);    
+        }
+
+        row.appendChild(cellsWrapper);
+        container.appendChild(row);
+    });
+}
+
+// 서버에서 히트맵 데이터를 가져와서 그리는 함수 (fetch는 "창구에 주문을 넣고 기다리는 것")
+async function loadHeatmap() {
+    try {
+        const response = await fetch("/api/v1/heatmap?hours=24");
+        const result = await response.json();
+
+        if (result.success) {
+            const lookup = buildHeatmapLookup(result.data);
+            renderHeatmap(lookup);
+        }
+    } catch (error) {
+        console.error("히트맵 로딩 실패:", error);
+    }
+}
+
+// 페이지 열리자마자 한 번 실행
+loadHeatmap();

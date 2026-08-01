@@ -146,3 +146,41 @@ body {
     color: #e63946;
     font-weight: bold;
 }
+
+/* ⭐ M6.5 Task 6.5-3 — 히트맵 섹션 */
+#heatmap-section {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid #ddd;
+}
+
+/* 히트맵 한 기기 당 한 줄 (라벨 + 24칸) */
+.heatmap-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 6px;
+}
+
+/* 기기 이름표 — 줄 앞에 고정폭으로 붙는 라벨 */
+.heatmap-row-label {
+    width: 70px;
+    font-size: 0.8em;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+/* 24칸을 담는 그릇 */
+.heatmap-cells {
+    display: flex;
+    gap: 2px;
+    flex: 1;
+}
+
+/* 칸 하나 (한 시간대) */
+.heatmap-cell {
+    flex: 1;
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: #eee;   /* 기본값 — 나중에 JS가 진하기를 덮어씀 */
+}
