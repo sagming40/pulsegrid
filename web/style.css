@@ -18,6 +18,9 @@
     --color-level-warning: #f4b400;
     --color-level-warning-text: #b8860b;
     --color-level-danger: #e63946;
+
+    --color-heatmap-low: 255, 247, 217;  /* 사용률 0%에 가까운 색 (연한 크림색) */
+    --color-heatmap-high: 191, 54, 12;   /* 사용률 100%에 가까운 색 (짙은 주황/빨강) */
 }
 
 body {
@@ -236,5 +239,8 @@ body {
         --color-level-warning: #f4b400;
         --color-level-warning-text: #ffca4d;
         --color-level-danger: #ff6b6b;
+
+        --color-heatmap-low: 61, 46, 20;       /* 다크모드용 — 어둡지만 배경보다는 밝은 갈색 (사용률 낮음) */
+        --color-heatmap-high: 255, 159, 67;   /* 다크모드용 — 밝은 주황 (사용률 높음) */
     }
 }
