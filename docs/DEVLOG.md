@@ -182,3 +182,30 @@
 - `03_api_spec.md`는 계획 문서 성격이라 지금 당장 수정하지 않고, M6/M7 문서 정리 단계에서 실제 구현 현황에 맞게 갱신 예정 (`history` 엔드포인트의 쿼리 파라미터가 `from`/`to`/`metric`에서 `minutes`로 단순화된 것도 함께 반영)
 
 ---
+
+## 2026-08-01 — M6 완료: 확장 지표 (디스크/배터리)
+
+**관련 마일스톤**: M6 (확장 지표) → 완료
+
+**한 일**
+- config.json에 disk_map(배열 구조, id/label/primary/usage_sensor/temp_sensor)과 battery_sensor 추가 — 디스크 개수가 기기마다 다른 점을 고려해 처음부터 리스트로 설계, 노트북엔 battery_sensor만 추가
+- 03_api_spec.md: MetricPayload의 disk 필드를 객체 → 배열로 변경, label 필드 추가, 관련 예시 3곳(3.1/3.2/4.2) 모두 실제 payload 구조로 수정
+- server/models.py: DiskMetric에 id/label 필드 추가, MetricPayload.disk를 Optional[list[DiskMetric]]로 변경
+- agent/agent.py: disk_map을 순회하며 디스크별 사용률/온도/라벨 파싱, battery_sensor 유무에 따라 분기 처리(없는 기기는 battery: null)
+- server/schema.sql, db.py: device_metrics_history에 battery_level/battery_charging 컬럼 추가(ALTER TABLE로 기존 DB에도 적용), disk 배열 중 id="main"인 항목을 대표로 골라 저장하도록 save_metric_snapshot() 수정
+- web/app.js, style.css: 카드 하단 디스크 영역을 고정 한 줄(span)에서, 디스크 개수만큼 줄을 동적으로 그리는 컨테이너(div.disk-summary-list) 구조로 변경
+- (M6 완료 기준엔 없었으나 뒤이어 진행) 디스크 표시를 "id" 대신 사용자 지정 label(`C: (SSD 1TB)` 형식)로 바꾸고 온도도 함께 렌더링하도록 개선, 구분자를 앱 전체 표준인 "·"로 통일. 04_ui_design.md 3.1-b절에 디스크 표시 형식 규격 신설
+- 데스크탑(디스크 2개)·노트북(디스크 1개+배터리) 양쪽 실 데이터로 최종 검증 완료
+
+**막혔던 점 / 트러블슈팅**
+- db.py의 save_metric_snapshot()이 disk를 여전히 단일 객체로 취급하고 있어 disk를 배열로 바꾼 직후 `'list' object has no attribute 'usage'` 에러 발생 — Task 6-3에서 "id=='main'인 항목을 대표로 골라 저장"하는 로직으로 수정 (예상된 순서상의 에러)
+- 노트북에서 agent.py 실행 시 disk/battery가 계속 null로 나오는 문제 발생 — config.json은 정상이었으나, 데스크탑에서만 agent.py를 수정하고 커밋 전이라 노트북의 agent.py가 예전 버전 그대로였던 게 원인. 여러 기기에 같은 코드가 물리적으로 따로 존재하며, 커밋 전엔 다른 기기로 자동 반영되지 않는다는 점을 재확인
+- 배터리 충전 여부(charging) 판정을 위해 충전기 연결 전/후 LibreHardwareMonitor 값을 비교했으나, 배터리가 이미 98~99%로 거의 완충 상태라 두 캡처 모두 "Discharge Rate"로 표시되어 판정 근거를 얻지 못함 → 부정확한 값을 무리하게 만들기보다 charging은 항상 null로 보류하기로 결정
+- 03_api_spec.md의 disk 배열 JSON 예시 3곳에 config.json의 disk_map 원본 필드(primary, usage_sensor, temp_sensor)가 그대로 복사되어 들어가는 실수 발생 — 실제 API payload와 config 전용 필드를 혼동한 것으로, 검수 단계에서 발견해 실제 payload 구조(id/label/usage/temp)로 수정
+- 디스크 라벨 표기법(`=`/`—`/`→` 등) 고민 끝에, 앱 전체에서 이미 쓰고 있던 구분자 "·"로 통일 — 화면 안에서 구분 기호를 하나로 맞추는 게 가독성에 유리함을 확인
+- 교훈: 여러 기기에서 동시에 코드를 고칠 땐, 한쪽에서 먼저 커밋·push하고 나머지 기기는 pull(또는 discard 후 pull)로 맞추는 편이 혼란을 줄여줌
+
+**다음에 할 일**
+- M6.5(가칭 — 히스토리 히트맵 + 날씨 API 연동) 또는 M7(문서화/배포 정리) 진행 예정, 마일스톤 번호는 실제 착수 시점에 확정
+
+--
