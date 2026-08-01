@@ -30,9 +30,26 @@ def save_metric_snapshot(device_id: str, payload: MetricPayload):
     """
     #gpu, disk가 통째로 None인 경우를 대비하여 안전하게 값 꺼내기
     gpu_usage = payload.gpu.usage if payload.gpu else None         
-    gpu_temp = payload.gpu.temp if payload.gpu else None         
-    disk_usage = payload.disk.usage if payload.disk else None         
-    disk_temp = payload.disk.temp if payload.disk else None
+    gpu_temp = payload.gpu.temp if payload.gpu else None
+    
+    # 여러 디스크 중 "main" 이름표가 붙은 대표 하나만 골라낸다
+    # 비유: 택배 상자들 중 "main"이라고 적힌 상자만 창고 기록에 남김
+    primary_disk = None
+    if payload.disk:
+        for d in payload.disk:
+            if d.id =="main":
+                primary_disk = d
+                break
+        else:
+            # break 없이 for문이 끝까지 다 돌았다 = "main" 이름표를 찾지 못했다.
+            # 이런 경우에는 첫 번째 상자를 대표로 삼는다 (안전장치)
+            primary_disk = payload.disk[0]    
+             
+    disk_usage = primary_disk.usage if primary_disk else None         
+    disk_temp = primary_disk.temp if primary_disk else None
+    
+    battery_level = payload.battery.level if payload.battery else None
+    battery_charging = payload.battery.charging if payload.battery else None
     
     conn = get_connection()
     cursor = conn.cursor()
@@ -40,8 +57,9 @@ def save_metric_snapshot(device_id: str, payload: MetricPayload):
     cursor.execute(
         """
         INSERT INTO device_metrics_history
-            (device_id, recorded_at, cpu_usage, cpu_temp, gpu_usage, gpu_temp, ram_usage, disk_usage, disk_temp)
-        VALUES (%s, NOW(), %s, %s, %s, %s, %s, %s, %s)    
+            (device_id, recorded_at, cpu_usage, cpu_temp, gpu_usage, gpu_temp, ram_usage, 
+             disk_usage, disk_temp, battery_level, battery_charging)
+        VALUES (%s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s)    
         """,
         (
             device_id,
@@ -52,6 +70,8 @@ def save_metric_snapshot(device_id: str, payload: MetricPayload):
             payload.ram.usage,
             disk_usage,
             disk_temp,
+            battery_level,
+            battery_charging,
         ),
     )
     conn.commit()   # "진짜 창고에 넣어라"는 확정 도장
@@ -76,7 +96,7 @@ def get_history(device_id: str, minutes: int = 60) -> list[dict]:
         """
         SELECT recorded_at, cpu_usage, cpu_temp,
                gpu_usage, gpu_temp, ram_usage,
-               disk_usage, disk_temp
+               disk_usage, disk_temp, battery_level, battery_charging
         FROM device_metrics_history
         WHERE device_id = %s
           AND recorded_at >= NOW() - INTERVAL %s MINUTE

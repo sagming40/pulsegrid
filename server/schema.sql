@@ -11,6 +11,8 @@ CREATE TABLE device_metrics_history (
 	 ram_usage	 FLOAT NULL,
 	 disk_usage	 FLOAT NULL,
 	 disk_temp	 FLOAT NULL,
+	 battery_level FLOAT NULL,         -- ⭐ Task 6-3(M6) 추가
+	 battery_charging BOOLEAN NULL,    -- ⭐ Task 6-3(M6) 추가
 	 
 	 INDEX idx_device_time (device_id, recorded_at)		  
 );
