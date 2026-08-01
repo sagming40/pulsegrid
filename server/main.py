@@ -6,7 +6,7 @@ from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import asyncio
 from models import MetricPayload
-from db import save_metric_snapshot, get_history
+from db import get_history, get_heatmap, save_metric_snapshot
 
 # ─────────────────────────────────────────────────────────────
 # 순찰(백그라운드 작업) 관련 설정값
@@ -78,6 +78,29 @@ def read_history(device_id: str, minutes: int =60):
         }
     
     rows = get_history(device_id, minutes)
+    return {
+        "success": True,
+        "data": rows
+    }
+    
+    
+@app.get("/api/v1/heatmap")
+def read_heatmap(hours: int = 24):
+    """
+    GET /api/v1/heatmap?hours=24
+    최근 N시간 동안 쌓인 데이터를 기기별/시간대별 평균으로 집계해서 반환.
+    """        
+    # hours가 0 이하로 들어오면 막기 (get_history의 minutes 검증과 같은 패턴)
+    if hours <= 0:
+        return {
+            "success": False,
+            "error": {
+                "code": "INVALID_PAYLOAD",
+                "message": "hours는 1 이상이어야 합니다."
+            }
+        }
+        
+    rows = get_heatmap(hours)
     return {
         "success": True,
         "data": rows
