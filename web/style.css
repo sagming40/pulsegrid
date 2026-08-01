@@ -1,7 +1,26 @@
+/* ⭐ M6.5 Task 6.5-7 — 색상표 (다크모드가 이 값들을 자동 바꿔치기) */
+:root {
+    --color-bg: #f5f5f5;
+    --color-border: #ddd;
+    --color-text-secondary: #666;    /* metric-temp, card-footer 등 보조 텍스트 */
+    --color-text-muted: #888;    /* device-hostname */
+    --color-text-dim: #bbb;    /* .dim (센서 없는 항목) */
+    --color-track-bg: #eee;   /* 게이지 트랙, 히트맵 빈 칸 배경 */
+    --color-track-fill-default: #999;
+
+    --color-status-online: #4caf50;
+    --color-status-offline: #999;
+
+    --color-level-normal: #3a86ff;
+    --color-level-warning: #f4b400;
+    --color-level-warning-text: #b8860b;
+    --color-level-danger: #e63946;
+}
+
 body {
     font-family: sans-serif;
     padding: 20px;
-    background: #f5f5f5;
+    background: var(--color-bg);
 }
 
 #cards-container {
@@ -11,7 +30,7 @@ body {
 }
 
 .device-card {
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 16px;
     transition: opacity 0.3s;
@@ -43,7 +62,7 @@ body {
 
 .device-hostname {
     font-size: 0.75em;
-    color: #888;
+    color: var(--color-text-muted);
 }
 
 .status-badge {
@@ -54,12 +73,12 @@ body {
 }
 
 .status-badge.online {
-    background: #4caf50;
+    background: var(--color-status-online);
     color: white;
 }
 
 .status-badge.offline {
-    background: #999;
+    background: var(--color-status-offline);
     color: white;
 }
 
@@ -80,12 +99,12 @@ body {
 }
 
 .metric-temp {
-    color: #666;
+    color: var(--color-text-secondary);
 }
 
 /* 게이지 트랙 = 주유소 계기판의 "빈 눈금판" 부분. 안이 비어있는 틀만 있는 상태 */
 .gauge-track {
-    background: #eee;
+    background: var(--color-track-bg);
     border-radius: 4px;
     height: 8px;
     overflow: hidden;
@@ -95,7 +114,7 @@ body {
 .gauge-fill {
     height: 100%;
     width: 0%;
-    background: #999;
+    background: var(--color-track-fill-default);
     /* 임계치 색상은 Task 4-2에서 조건별로 바꿀 예정 */
     transition: width 0.3s;
 }
@@ -105,8 +124,8 @@ body {
     justify-content: space-between;
     align-items: flex-start;  /* ⭐ Task 6-4(M6) 추가 — 디스크가 2줄이어도 배터리는 위쪽에 맟춰짐 */
     font-size: 0.85em;
-    color: #555;
-    border-top: 1px solid #eee;
+    color: var(--color-text-secondary);
+    border-top: 1px solid var(--color-track-bg);
     padding-top: 8px;
     margin-top: 4px;
 }
@@ -128,30 +147,30 @@ body {
 
 /* 센서가 아예 없는 항목(예: 데스크탑의 배터리 항목)은 흐린색 */
 .card-footer .dim {
-    color: #bbb;
+    color: var(--color-text-dim);
 }
 
 /* 게이지 필 색상 3단계 — 값에 따라 JS가 클래스를 갈아 끼움 */
 .gauge-fill.level-normal {
-    background: #3a86ff;
+    background: var(--color-level-normal);
 }
 
 .gauge-fill.level-warning {
-    background: #f4b400;
+    background: var(--color-level-warning);
 }
 
 .gauge-fill.level-danger {
-    background: #e63946;
+    background: var(--color-level-danger);
 }
 
 /* 온도 숫자 색상 3단계 */
 .metric-temp.level-warning {
-    color: #b8860b;
+    color: var(--color-level-warning-text);
     font-weight: bold;
 }
 
 .metric-temp.level-danger {
-    color: #e63946;
+    color: var(--color-level-danger);
     font-weight: bold;
 }
 
@@ -159,7 +178,7 @@ body {
 #heatmap-section {
     margin-top: 24px;
     padding-top: 16px;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--color-border);
 }
 
 /* 히트맵 한 기기 당 한 줄 (라벨 + 24칸) */
@@ -190,5 +209,5 @@ body {
     flex: 1;
     aspect-ratio: 1;
     border-radius: 3px;
-    background: #eee;   /* 기본값 — 나중에 JS가 진하기를 덮어씀 */
+    background: var(--color-track-bg);   /* 기본값 — 나중에 JS가 진하기를 덮어씀 */
 }
