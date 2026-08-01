@@ -114,3 +114,43 @@ def get_history(device_id: str, minutes: int = 60) -> list[dict]:
         row["recorded_at"] = row["recorded_at"].isoformat()
     
     return rows    
+
+
+def get_heatmap(hours: int = 24) -> list[dict]:
+    """
+    지금까지 쌓인 모든 히스토리 기록을 "몇 시에 들어왔는지"만 확인 후,
+    기기별 24개 우체통(시간대)에 나눠 담아 각 우체통의 평균 CPU 사용률을 계산하여 돌려줌.
+    
+    비유: 날짜는 신경쓰지 않고 "9시에 온 택배들끼리, 3시에 온 택배들끼리"
+    묶어서 각 묶음의 평균 무게를 재는 것.
+    
+    hours 파라미터는 "최근 며칠간 데이터만 볼지" 범위를 제한하는 용도.
+    (기본값 24 = 최근 24시간 안에 쌓인 기록만 집계)
+    """
+    conn = get_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute(
+        """
+        SELECT
+            device_id,
+            HOUR(recorded_at) AS hour_slot,
+            AVG(cpu_usage) AS avg_cpu_usage,
+            COUNT(*) AS sample_count
+        FROM device_metrics_history
+        WHERE recorded_at >= NOW() - INTERVAL %s HOUR
+        GROUP BY device_id, HOUR(recorded_at)
+        ORDER BY device_id, hour_slot    
+        """,
+        (hours,),
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    
+    # AVG()는 소숫점이 길게 출력될 수 있어서 가독성 편의를 고려하여 반올림
+    # (예: 43.333333333 → 43.3)
+    for row in rows:
+        row["avg_cpu_usage"] = round(float(row["avg_cpu_usage"]), 1)
+        
+    return rows    
