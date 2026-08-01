@@ -31,6 +31,8 @@ def save_metric_snapshot(device_id: str, payload: MetricPayload):
     #gpu, disk가 통째로 None인 경우를 대비하여 안전하게 값 꺼내기
     gpu_usage = payload.gpu.usage if payload.gpu else None         
     gpu_temp = payload.gpu.temp if payload.gpu else None
+    cpu_power = payload.cpu.power
+    gpu_power = payload.gpu.power if payload.gpu else None
     
     # 여러 디스크 중 "main" 이름표가 붙은 대표 하나만 골라낸다
     # 비유: 택배 상자들 중 "main"이라고 적힌 상자만 창고 기록에 남김
@@ -57,16 +59,21 @@ def save_metric_snapshot(device_id: str, payload: MetricPayload):
     cursor.execute(
         """
         INSERT INTO device_metrics_history
-            (device_id, recorded_at, cpu_usage, cpu_temp, gpu_usage, gpu_temp, ram_usage, 
-             disk_usage, disk_temp, battery_level, battery_charging)
-        VALUES (%s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s)    
+            (device_id, recorded_at, 
+             cpu_usage, cpu_temp, cpu_power, 
+             gpu_usage, gpu_temp, gpu_power, ram_usage, 
+             disk_usage, disk_temp, 
+             battery_level, battery_charging)
+        VALUES (%s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)    
         """,
         (
             device_id,
             payload.cpu.usage,
             payload.cpu.temp,
+            cpu_power,
             gpu_usage,
             gpu_temp,
+            gpu_power,
             payload.ram.usage,
             disk_usage,
             disk_temp,

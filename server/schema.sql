@@ -6,8 +6,10 @@ CREATE TABLE device_metrics_history (
 	 recorded_at DATETIME NOT NULL,
 	 cpu_usage	 FLOAT NULL,
 	 cpu_temp	 FLOAT NULL,
+	 cpu_power	 FLOAT NULL,		   -- ⭐ Task 6.5-5(M6.5) 추가
 	 gpu_usage	 FLOAT NULL,
 	 gpu_temp	 FLOAT NULL,
+	 gpu_power	 FLOAT NULL,		   -- ⭐ Task 6.5-5(M6.5) 추가	
 	 ram_usage	 FLOAT NULL,
 	 disk_usage	 FLOAT NULL,
 	 disk_temp	 FLOAT NULL,
