@@ -65,7 +65,7 @@ function getOrCreateCard(deviceId, deviceName) {
                 </div>
                 
                 <div class="card-footer">
-                    <span class="disk-summary">디스크 —</span>
+                    <div class="disk-summary-list"></div>
                     <span class="battery-summary">배터리 —</span>
                 </div>    
             `;
@@ -124,8 +124,25 @@ function updateCardMetrics(deviceId, metric) {
     updateMetricRow(card, "gpu", metric.gpu.usage, metric.gpu.temp);
     updateMetricRow(card, "ram", metric.ram.usage, null);  // RAM 행엔 온도 표시 칸이 없어 null로 넘겨도 안전함
 
-    const diskEl = card.querySelector(".disk-summary");
-    diskEl.innerText = `디스크 ${formatUsage(metric.disk?.usage)}`;
+    // 디스크 개수만큼 줄을 새로 그린다
+    // 비유: 칠판에 있던 디스크 목록을 지우개로 싹 지우고, 최신 목록을 처음 부터 다시 씀
+    const diskContainer = card.querySelector(".disk-summary-list");
+    diskContainer.innerHTML = "";   // 기존 디스크 목록 지우기
+
+    if (metric.disk && metric.disk.length > 0) {
+        metric.disk.forEach((disk) => {
+            const line = document.createElement("span");
+            line.className = "disk-summary";
+            line.innerText = `디스크(${disk.id}) ${formatUsage(disk.usage)}`;
+            diskContainer.appendChild(line);
+        });
+    } else {
+        // disk_map이 비어있는 극단적인 경우를 대비한 안전장치
+        const line = document.createElement("span");
+        line.className = "disk-summary dim";
+        line.innerText = "디스크 —";
+        diskContainer.appendChild(line);
+    }
 
     const batteryEl = card.querySelector(".battery-summary");
     if (metric.battery) {
