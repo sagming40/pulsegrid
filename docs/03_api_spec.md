@@ -96,6 +96,7 @@
 | 필드 | 타입 | 단위 | 설명 |
 |---|---|---|---|
 | `id` | string | - | 디스크 식별자 (예: `main`, `sub`) |
+| `label` | string | - | 화면에 표시할 사용자 지정 이름표 (예: `C: (SSD or HDD 1TB)`) |
 | `usage` | float \| null | % | 디스크 사용 공간 비율 |
 | `temp` | float \| null | °C | 디스크 온도 |
 
@@ -137,9 +138,9 @@ POST /api/v1/metrics
   "gpu": { "usage": 0.0, "temp": 37.7 },
   "ram": { "usage": 32.0, "used_gb": 10.0, "total_gb": 32.0 },
   "disk": [
-      { "id": "main", "usage": 44.1, "temp": 51.0 },
-      { "id": "sub", "usage": 30.2, "temp": 42.0 }
-    ],
+    { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
+    { "id": "sub", "label": "D: (SSD 1TB)", "usage": 30.2, "temp": 42.0 }
+  ],
   "battery": null
 }
 ```
@@ -182,8 +183,8 @@ GET /api/v1/devices
       "gpu": { "usage": 0.0, "temp": 37.7 },
       "ram": { "usage": 32.0, "used_gb": 10.0, "total_gb": 32.0 },
       "disk": [
-        { "id": "main", "usage": 44.1, "temp": 51.0 },
-        { "id": "sub", "usage": 30.2, "temp": 42.0 }
+        { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
+        { "id": "sub", "label": "D: (SSD 1TB)", "usage": 30.2, "temp": 42.0 }
       ],
       "battery": null
     },
@@ -196,8 +197,8 @@ GET /api/v1/devices
       "gpu": { "usage": 1.1, "temp": null },
       "ram": { "usage": 79.0, "used_gb": 12.3, "total_gb": 16.0 },
       "disk": [
-        { "id": "main", "usage": 44.1, "temp": 51.0 },
-        { "id": "sub", "usage": 30.2, "temp": 42.0 }
+        { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
+        { "id": "sub", "label": "D: (SSD 1TB)", "usage": 30.2, "temp": 42.0 }
       ],
       "battery": { "level": 96.9, "charging": false }
     }
@@ -340,8 +341,8 @@ WS /ws/dashboard
     "gpu": { "usage": 1.4, "temp": null },
     "ram": { "usage": 79.2, "used_gb": 12.4, "total_gb": 16.0 },
     "disk": [
-      { "id": "main", "usage": 44.1, "temp": 51.0 },
-      { "id": "sub", "usage": 30.2, "temp": 42.0 }
+      { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
+      { "id": "sub", "label": "D: (SSD 1TB)", "usage": 30.2, "temp": 42.0 }
     ],
     "battery": { "level": 96.8, "charging": false }
   }

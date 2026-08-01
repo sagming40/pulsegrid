@@ -133,7 +133,7 @@ function updateCardMetrics(deviceId, metric) {
         metric.disk.forEach((disk) => {
             const line = document.createElement("span");
             line.className = "disk-summary";
-            line.innerText = `디스크(${disk.id}) ${formatUsage(disk.usage)}`;
+            line.innerText = `${disk.label} · ${formatUsage(disk.usage)} · ${formatTemp(disk.temp)}`;
             diskContainer.appendChild(line);
         });
     } else {

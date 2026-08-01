@@ -18,7 +18,8 @@ class RamMetric(BaseModel):
     total_gb: Optional[float] = None
     
 class DiskMetric(BaseModel):
-    id: str   # ⭐ Task 6-1(M6) 추가
+    id: str      # ⭐ Task 6-1(M6) 추가
+    label: str   # ⭐ 추가 — 화면에 보여줄 이름표
     usage: Optional[float] = None
     temp: Optional[float] = None
     

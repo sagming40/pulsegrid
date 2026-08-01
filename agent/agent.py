@@ -90,6 +90,7 @@ def collect_metrics():
         temp = parse_value(find_by_sensor_id(raw_data, disk_config["temp_sensor"]))
         disk_list.append({
             "id": disk_config["id"],
+            "label": disk_config["label"],   #  ⭐ 추가
             "usage": usage,
             "temp": temp,
         })
