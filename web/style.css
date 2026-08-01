@@ -1,5 +1,8 @@
 /* ⭐ M6.5 Task 6.5-7 — 색상표 (다크모드가 이 값들을 자동 바꿔치기) */
 :root {
+    --color-text-primary: #1a1a1a;  /* 본문 기본 글자색 */
+    --color-card-bg: #ffffff;   /* 카드/패널 배경색 (지금은 흰색) */    
+
     --color-bg: #f5f5f5;
     --color-border: #ddd;
     --color-text-secondary: #666;    /* metric-temp, card-footer 등 보조 텍스트 */
@@ -21,6 +24,7 @@ body {
     font-family: sans-serif;
     padding: 20px;
     background: var(--color-bg);
+    color: var(--color-text-primary); /* ⭐ 추가 */
 }
 
 #cards-container {
@@ -210,4 +214,27 @@ body {
     aspect-ratio: 1;
     border-radius: 3px;
     background: var(--color-track-bg);   /* 기본값 — 나중에 JS가 진하기를 덮어씀 */
+}
+
+/* ⭐ M6.5 Task 6.5-7 — 시스템이 다크모드일 때 색상표를 통째로 교체 */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-bg: #121212;
+        --color-card-bg: #1e1e1e;
+        --color-border: #333333;
+        --color-text-primary: #e8e8e8;
+        --color-text-secondary: #aaaaaa;
+        --color-text-muted: #888888;
+        --color-text-dim: #555555;
+        --color-track-bg: #2a2a2a;
+        --color-track-fill-default: #666666;
+
+        --color-status-online: #43a047;
+        --color-status-offline: #666666;
+
+        --color-level-normal: #5b9bff;
+        --color-level-warning: #f4b400;
+        --color-level-warning-text: #ffca4d;
+        --color-level-danger: #ff6b6b;
+    }
 }
