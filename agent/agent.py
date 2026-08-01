@@ -14,7 +14,8 @@ DEVICE_ID = config["device_id"]
 DEVICE_NAME = config["device_name"]
 LHM_URL = config["lhm_url"]
 SERVER_URL = config["server_url"]
-SENSOR_MAP = config["sensor_map"]     
+SENSOR_MAP = config["sensor_map"]
+DISK_MAP = config["disk_map"]     
 
 
 def find_by_sensor_id(node, target_id):
@@ -82,6 +83,25 @@ def collect_metrics():
     if ram_used is not None and ram_available is not None:
         ram_total = round(ram_used + ram_available, 1)
         
+    # 명함첩(disk_map)을 한 장씩 넘기면서, 각 디스크의 사용률/온도를 찾아 리스트에 쌓는다
+    disk_list =[]
+    for disk_config in DISK_MAP:
+        usage = parse_value(find_by_sensor_id(raw_data, disk_config["usage_sensor"]))
+        temp = parse_value(find_by_sensor_id(raw_data, disk_config["temp_sensor"]))
+        disk_list.append({
+            "id": disk_config["id"],
+            "usage": usage,
+            "temp": temp,
+        })
+        
+    # 배터리 설정 자체가 config에 있는 집(노트북)만 시도, 없는 집(데스크탑)은 아예 건드리지 않음
+    battery_config = config.get("battery_sensor")
+    if battery_config:
+        battery_level = parse_value(find_by_sensor_id(raw_data, battery_config["level"]))
+        battery_payload = { "level": battery_level, "charging": None }   # charging은 당장 정확한 측정이 어려워 보류
+    else:
+        battery_payload = None        
+        
     # API 명세서(03) 2.1절 MetricPayload 형식으로 포장
     payload = {
         "device_id": DEVICE_ID,
@@ -90,8 +110,8 @@ def collect_metrics():
         "cpu": {"usage": cpu_usage, "temp": cpu_temp},
         "gpu": {"usage": gpu_usage, "temp": gpu_temp},
         "ram": {"usage": ram_usage, "used_gb": ram_used, "total_gb": ram_total},
-        "disk": None,      # P1 확장 예정 (M6)
-        "battery": None,   # 추후 노트북 config에서 battery 항목 추가 예정 (M6)
+        "disk": disk_list if disk_list else None,   # 빈 리스트면 null 반환 (disk_map이 비어있는 극단적 상황 대비)
+        "battery": battery_payload,   
     }
     return payload         
         
