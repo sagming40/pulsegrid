@@ -10,6 +10,16 @@
     <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
         <h1 style="margin: 0;">PULSEGRID</h1>
         <span id="connection-status" style="font-size: 0.85em; padding: 4px 10px; border-radius: 4px; background: #4caf50; color: white;">● 실시간 연결</span>
+
+        <!-- ⭐ M6.5 Task 6.5-7c — 테마 설정 톱니바퀴 -->
+        <div id="theme-settings" style="position: relative; margin-left: auto;">
+            <button id="theme-toggle-btn" style="background: none; border: none; font-size: 1.3em; cursor: pointer; padding: 4px 8px;">⚙️</button>
+            <div id="theme-menu" style="display: none; position: absolute; right: 0; top: 100%; background: var(--color-card-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: 8px; margin-top: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10;">
+                <button class="theme-option" data-theme="system" style="display: block; width: 100%; text-align: left; padding: 8px 16px; background: none; border: none; cursor: pointer; color: var(--color-text-primary); border-radius: 4px;">🖥️ 시스템 설정</button>
+                <button class="theme-option" data-theme="light" style="display: block; width: 100%; text-align: left; padding: 8px 16px; background: none; border: none; cursor: pointer; color: var(--color-text-primary); border-radius: 4px;">☀️ 라이트</button>
+                <button class="theme-option" data-theme="dark" style="display: block; width: 100%; text-align: left; padding: 8px 16px; background: none; border: none; cursor: pointer; color: var(--color-text-primary); border-radius: 4px;">🌙 다크</button>
+            </div>
+        </div> 
     </div>
     <div id="cards-container"></div>
 

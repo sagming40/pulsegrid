@@ -516,3 +516,56 @@ async function loadHeatmap() {
 
 // 페이지 열리자마자 한 번 실행
 loadHeatmap();
+
+// ─────────────────────────────────────────────
+// M6.5 Task 6.5-7c — 테마 설정 토글
+// ─────────────────────────────────────────────
+const THEME_STORAGE_KEY = "pulsegrid-theme";    // localStorage에 저장할 때 쓸 이름표
+
+// 저장된 테마 값을 실제로 화면에 적용하는 함수
+// 비유: 리모컨 버튼을 누르면 실제로 조명이 바뀌는 부분
+function applyTheme(theme) {
+    if (theme === "system") {
+        // data-theme 속성 자체를 지워서, CSS의 @media (prefers-color-scheme) 규칙이 다시 주도권을 갖게 함
+        document.documentElement.removeAttribute("data-theme");
+    } else {
+        // "light" 또는 "dark"를 html 태그에 직접 꼬리표로 붙임
+        document.documentElement.setAttribute("data-theme", theme);
+    }
+
+    localStorage.setItem(THEME_STORAGE_KEY, theme);   // 다음에 열 때도 기억하도록 저장
+
+    // 테마가 바뀌었으니, 이미 그려둔 히트맵도 새 색상으로 다시 그림
+    // (이 작업을 하지 않으면 "배경은 바뀌었는데 히트맵만 예전 색" 문제가 재발현 됨)
+    loadHeatmap();
+}
+
+// 페이지가 열릴 때, 저장된 테마가 있으면 그걸로 시작 (없으면 "system"이 기본값)
+function initTheme() {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) ?? "system";
+    applyTheme(saved);
+}
+
+// 톱니바퀴 버튼 클릭 시 on/off
+const themeToggleBtn = document.getElementById("theme-toggle-btn");
+const themeMenu = document.getElementById("theme-menu");
+
+themeToggleBtn.addEventListener("click", (event) => {
+    event.stopPropagation();    // 이 클릭이 "바깥 클릭"으로 오인되어 바로 닫히지 않도록 막음
+    themeMenu.style.display = themeMenu.style.display === "block" ? "none" : "block";
+});
+
+// 메뉴 안의 옵션(시스템/라이트/다크) 중 하나를 클릭하면
+document.querySelectorAll(".theme-option").forEach((btn) => {
+    btn.addEventListener("click", () => {
+        applyTheme(btn.dataset.theme);
+        themeMenu.style.display = "none";   // 고르고 니면 메뉴 닫기
+    });
+});
+
+// 메뉴 바깥 아무 곳이나 클릭하면 메뉴 닫음
+document.addEventListener("click", () => {
+    themeMenu.style.display = "none";
+});
+
+initTheme();    // 페이지 로드 시 저장된 테마 적용
