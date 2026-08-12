@@ -4,7 +4,7 @@
 
 - **작성일**: 2026-07-28
 - **작성자**: 사공민규
-- **버전**: v0.1 (초안)
+- **버전**: v0.2
 - **관련 문서**: 요구사항 정의서(01), 시스템 아키텍처(02)
 
 ---
@@ -66,8 +66,8 @@
 | `cpu` | object | O | CPU 지표 |
 | `gpu` | object \| null | O | GPU 지표 (없으면 `null`) |
 | `ram` | object | O | 메모리 지표 |
-| `disk` | array \| null | X | 디스크 지표 목록 (P1, 기기마다 개수 다름) |
-| `battery` | object \| null | X | 배터리 지표 (P1, 노트북 한정) |
+| `disk` | array \| null | X | 디스크 지표 목록 (기기마다 개수 다름) |
+| `battery` | object \| null | X | 배터리 지표 (노트북 한정) |
 
 #### cpu 객체
 
@@ -75,6 +75,7 @@
 |---|---|---|---|
 | `usage` | float \| null | % | CPU 전체 사용률 (0.0 ~ 100.0) |
 | `temp` | float \| null | °C | CPU 온도 |
+| `power` | float \| null | W | CPU 소비 전력 (M6.5 추가) |
 
 #### gpu 객체
 
@@ -82,6 +83,7 @@
 |---|---|---|---|
 | `usage` | float \| null | % | GPU 코어 사용률 |
 | `temp` | float \| null | °C | GPU 코어 온도 (내장그래픽은 `null` 가능) |
+| `power` | float \| null | W | GPU 소비 전력 (M6.5 추가, 내장그래픽도 값 제공됨) |
 
 #### ram 객체
 
@@ -91,7 +93,7 @@
 | `used_gb` | float \| null | GB | 사용 중인 용량 |
 | `total_gb` | float \| null | GB | 전체 용량 |
 
-#### disk 배열의 각 항목 (P1)
+#### disk 배열의 각 항목
 
 | 필드 | 타입 | 단위 | 설명 |
 |---|---|---|---|
@@ -100,7 +102,7 @@
 | `usage` | float \| null | % | 디스크 사용 공간 비율 |
 | `temp` | float \| null | °C | 디스크 온도 |
 
-#### battery 객체 (P1)
+#### battery 객체
 
 | 필드 | 타입 | 단위 | 설명 |
 |---|---|---|---|
@@ -134,8 +136,8 @@ POST /api/v1/metrics
   "device_id": "desktop",
   "device_name": "DESKTOP-5VSB06S",
   "timestamp": "2026-07-28T23:15:00",
-  "cpu": { "usage": 1.4, "temp": 46.0 },
-  "gpu": { "usage": 0.0, "temp": 37.7 },
+  "cpu": { "usage": 1.4, "temp": 46.0, "power": 6.8 },
+  "gpu": { "usage": 0.0, "temp": 37.7, "power": 24.2 },
   "ram": { "usage": 32.0, "used_gb": 10.0, "total_gb": 32.0 },
   "disk": [
     { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
@@ -157,11 +159,13 @@ POST /api/v1/metrics
 1. 요청 본문 검증
 2. 서버 메모리에 해당 `device_id`의 최신 상태 갱신
 3. 연결된 모든 WebSocket 클라이언트에 브로드캐스트
-4. (P1) 마지막 DB 저장 시각으로부터 1분 경과 시 DB에 기록
+4. 마지막 DB 저장 시각으로부터 1분 경과 시 DB에 기록
 
 ---
 
 ### 3.2 전체 기기 최신 상태 조회
+
+> ⚠️ **미구현** — 기획 단계(v0.1)에서 설계했으나, `WS /ws/dashboard` 연결 시 `snapshot` 메시지가 이 역할을 대신하고 있어 별도 구현하지 않았다. REST 조회 후 WebSocket 연결하는 2단계 흐름 대신 WebSocket 하나로 초기 상태+실시간 갱신을 모두 처리하는 편이, "REST 응답 시점과 WS 연결 시점 사이 데이터 갱신을 놓칠 수 있는" 동기화 문제를 원천적으로 피할 수 있다고 판단했다. 아래 명세는 **설계 의도 기록용으로 남겨둔다.**
 
 ```
 GET /api/v1/devices
@@ -179,8 +183,8 @@ GET /api/v1/devices
       "device_name": "DESKTOP-5VSB06S",
       "timestamp": "2026-07-28T23:15:00",
       "status": "online",
-      "cpu": { "usage": 1.4, "temp": 46.0 },
-      "gpu": { "usage": 0.0, "temp": 37.7 },
+      "cpu": { "usage": 1.4, "temp": 46.0, "power": 6.8 },
+      "gpu": { "usage": 0.0, "temp": 37.7, "power": 24.2 },
       "ram": { "usage": 32.0, "used_gb": 10.0, "total_gb": 32.0 },
       "disk": [
         { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
@@ -193,8 +197,8 @@ GET /api/v1/devices
       "device_name": "DESKTOP-9TR0GGV",
       "timestamp": "2026-07-28T23:14:58",
       "status": "online",
-      "cpu": { "usage": 19.7, "temp": 67.0 },
-      "gpu": { "usage": 1.1, "temp": null },
+      "cpu": { "usage": 19.7, "temp": 67.0, "power": 28.2 },
+      "gpu": { "usage": 1.1, "temp": null, "power": 3.5 },
       "ram": { "usage": 79.0, "used_gb": 12.3, "total_gb": 16.0 },
       "disk": [
         { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
@@ -216,6 +220,8 @@ GET /api/v1/devices
 ---
 
 ### 3.3 특정 기기 최신 상태 조회
+
+> ⚠️ **미구현** — 사유는 3.2와 동일.
 
 ```
 GET /api/v1/devices/{device_id}
@@ -242,7 +248,7 @@ GET /api/v1/devices/{device_id}
 
 ---
 
-### 3.4 히스토리 조회 (P1)
+### 3.4 히스토리 조회
 
 ```
 GET /api/v1/history
@@ -253,33 +259,107 @@ GET /api/v1/history
 | 이름 | 타입 | 필수 | 기본값 | 설명 |
 |---|---|:---:|---|---|
 | `device_id` | string | O | - | 조회할 기기 |
-| `from` | string | X | 1시간 전 | 시작 시각 (ISO 8601) |
-| `to` | string | X | 현재 | 종료 시각 (ISO 8601) |
-| `metric` | string | X | `all` | 조회 지표 (`cpu`, `gpu`, `ram`, `all`) |
+| `minutes` | int | X | `60` | 지금부터 몇 분 전까지 조회할지 |
+
+> 최초 설계는 `from`/`to`/`metric` 파라미터였으나, 구현 단계에서 "지금부터 N분 전까지"라는 상대적 범위가 프론트엔드 드롭다운(실시간/1시간/6시간/24시간) UX와 더 맞아떨어져 `minutes` 하나로 단순화했다.
 
 **요청 예시**
 ```
-GET /api/v1/history?device_id=desktop&from=2026-07-28T22:00:00&metric=cpu
+GET /api/v1/history?device_id=desktop&minutes=60
 ```
 
 **Response (200 OK)**
+
 ```json
 {
   "success": true,
-  "data": {
-    "device_id": "desktop",
-    "metric": "cpu",
-    "points": [
-      { "timestamp": "2026-07-28T22:00:00", "usage": 12.4, "temp": 48.0 },
-      { "timestamp": "2026-07-28T22:01:00", "usage": 8.1,  "temp": 46.5 }
-    ]
+  "data": [
+    {
+      "recorded_at": "2026-08-01T22:00:00",
+      "cpu_usage": 12.4,
+      "cpu_temp": 48.0,
+      "cpu_power": 6.8,
+      "gpu_usage": 3.1,
+      "gpu_temp": 39.2,
+      "gpu_power": 24.2,
+      "ram_usage": 55.0,
+      "disk_usage": 44.1,
+      "disk_temp": 51.0,
+      "battery_level": null,
+      "battery_charging": null
+    }
+  ]
+}
+```
+> **설계 노트 — disk가 배열이 아니라 단일 값인 이유**: `MetricPayload`(실시간 전송용)의 `disk`는 여러 디스크를 담는 배열이지만, DB에 저장할 땐 `id="main"`인 디스크 하나만 대표로 골라 평탄화된 컬럼(`disk_usage`, `disk_temp`)에 저장한다. 히스토리 그래프가 기기당 하나의 추세선만 보여주면 충분해 다중 디스크를 그대로 저장할 필요가 없었기 때문. (`server/db.py`의 `save_metric_snapshot()` 참고)
+>
+> **참고**: `cpu_power`/`gpu_power`는 `device_metrics_history`에 저장은 되고 있었으나 `get_history()`의 `SELECT` 절에서 누락돼 있던 것을 M7 문서화 검수 과정에서 발견해 수정했다. (수정 전: 실시간 카드엔 전력이 표시되지만 히스토리 모드엔 반영되지 않는 상태)
+
+**Response (400 Bad Request)** — `minutes`가 1 미만인 경우
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PAYLOAD",
+    "message": "minutes는 1 이상이어야 합니다."
   }
 }
 ```
 
 ---
 
-### 3.5 서버 상태 확인
+### 3.5 시간대별 CPU 히트맵 조회
+```
+GET /api/v1/heatmap
+```
+**설명**: 최근 N시간 동안 쌓인 히스토리를 기기별·시간대(0~23시)별로 묶어 평균 CPU 사용률을 계산한다.
+
+**Query Parameters**
+
+| 이름 | 타입 | 필수 | 기본값 | 설명 |
+|---|---|:---:|---|---|
+| `hours` | int | X | `24` | 최근 몇 시간 데이터를 집계할지 |
+
+**요청 예시**
+
+```
+GET /api/v1/heatmap?hours=24
+```
+
+**Response (200 OK)**
+
+
+```json
+{
+  "success": true,
+  "data": [
+    { "device_id": "desktop", "hour_slot": 9, "avg_cpu_usage": 43.3, "sample_count": 12 },
+    { "device_id": "desktop", "hour_slot": 10, "avg_cpu_usage": 51.7, "sample_count": 15 },
+    { "device_id": "laptop", "hour_slot": 9, "avg_cpu_usage": 22.1, "sample_count": 12 }
+  ]
+}
+```
+
+> `hour_slot`은 `HOUR(recorded_at)` 기준(0~23)이며, **날짜 구분 없이 시간대만으로 묶는다.** 즉 "어제 9시"와 "오늘 9시" 데이터가 하나의 `hour_slot=9`로 합쳐진다. (`server/db.py`의 `get_heatmap()` 참고)
+
+**Response (400 Bad Request)** — `hours`가 1 미만인 경우
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_PAYLOAD",
+    "message": "hours는 1 이상이어야 합니다."
+  }
+}
+```
+
+---
+
+### 3.6 서버 상태 확인
+
+> ⚠️ **미구현** — 외부 모니터링 도구 연동용으로 설계했으나, 1인 개인 프로젝트 특성상 아직 그런 외부 모니터링 자체가 없어 필요성이 생기지 않았다. M8(Flutter 모바일 클라이언트) 등에서 연결 확인 용도로 필요해지면 재검토 예정.
 
 ```
 GET /api/v1/health
@@ -337,8 +417,8 @@ WS /ws/dashboard
   "data": {
     "device_id": "laptop",
     "timestamp": "2026-07-28T23:15:02",
-    "cpu": { "usage": 21.3, "temp": 68.0 },
-    "gpu": { "usage": 1.4, "temp": null },
+    "cpu": { "usage": 21.3, "temp": 68.0, "power": 24.5 },
+    "gpu": { "usage": 1.4, "temp": null, "power": 3.2 },
     "ram": { "usage": 79.2, "used_gb": 12.4, "total_gb": 16.0 },
     "disk": [
       { "id": "main", "label": "C: (SSD 1TB)", "usage": 44.1, "temp": 51.0 },
@@ -373,13 +453,14 @@ WS /ws/dashboard
 
 ## 5. 상태 코드 요약
 
-| 엔드포인트 | 메서드 | 성공 | 주요 실패 |
-|---|---|---|---|
-| `/api/v1/metrics` | POST | 200 | 400, 422 |
-| `/api/v1/devices` | GET | 200 | 500 |
-| `/api/v1/devices/{id}` | GET | 200 | 404 |
-| `/api/v1/history` | GET | 200 | 400, 404 |
-| `/api/v1/health` | GET | 200 | - |
+| 엔드포인트 | 메서드 | 상태 | 성공 | 주요 실패 |
+|---|---|---|---|---|
+| `/api/v1/metrics` | POST | 구현됨 | 200 | 400, 422 |
+| `/api/v1/devices` | GET | 미구현 | - | - |
+| `/api/v1/devices/{id}` | GET | 미구현 | - | - |
+| `/api/v1/history` | GET | 구현됨 | 200 | 400 |
+| `/api/v1/heatmap` | GET | 구현됨 | 200 | 400 |
+| `/api/v1/health` | GET | 미구현 | - | - |
 
 ---
 
@@ -398,3 +479,4 @@ WS /ws/dashboard
 | 버전 | 날짜 | 내용 |
 |---|---|---|
 | v0.1 | 2026-07-28 | 최초 작성 |
+| v0.2 | 2026-08-12 | M6/M6.5 구현 현황 반영 — cpu/gpu에 power 필드 추가, history 파라미터를 from/to/metric → device_id/minutes로 변경(응답 구조도 함께 변경), heatmap 엔드포인트 신규 추가, devices/devices-id/health를 미구현으로 명시 |
