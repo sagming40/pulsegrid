@@ -100,24 +100,25 @@
 ```
 pulsegrid/
 │
-├── agent/                       # 각 기기에서 실행되는 수집기
+├── agent/                           # 각 기기에서 실행되는 수집기
 │   ├── agent.py
 │   ├── config.example.desktop.json
 │   └── config.example.laptop.json
 │
-├── server/                      # FastAPI 서버
+├── server/                          # FastAPI 서버
 │   ├── db_config.example.json
 │   ├── db.py
 │   ├── main.py
 │   ├── models.py
 │   └── schema.sql
 │   
-├── web/                         # 웹 대시보드
+├── web/                             # 웹 대시보드
 │   ├── index.html
 │   ├── app.js
 │   └── style.css
 │
-├── docs/                        # 설계 문서
+├── docs/                            # 설계 문서
+│   ├── images/                      # 스크린샷 / GIF
 │   ├── 01_requirements.md
 │   ├── 02_architecture.md
 │   ├── 03_api_spec.md
@@ -126,6 +127,7 @@ pulsegrid/
 │   └── DEVLOG.md
 │
 ├── .gitignore
+├── LICENSE
 ├── requirements.txt
 └── README.md
 ```
