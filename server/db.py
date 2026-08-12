@@ -101,8 +101,8 @@ def get_history(device_id: str, minutes: int = 60) -> list[dict]:
     
     cursor.execute(
         """
-        SELECT recorded_at, cpu_usage, cpu_temp,
-               gpu_usage, gpu_temp, ram_usage,
+        SELECT recorded_at, cpu_usage, cpu_temp, cpu_power,
+               gpu_usage, gpu_temp, gpu_power, ram_usage,
                disk_usage, disk_temp, battery_level, battery_charging
         FROM device_metrics_history
         WHERE device_id = %s
