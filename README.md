@@ -131,25 +131,6 @@ pulsegrid/
 2. **MariaDB Connector/C** 설치 — Python `mariadb` 패키지가 내부적으로 이 C 라이브러리를 필요로 함 (pip만으로는 설치되지 않음)
    - [Connector/C 다운로드](https://mariadb.com/downloads/connectors/connectors-data-access/c-connector) 후 설치
 
-```bash
-mysql -u root -p < server/schema.sql
-```
-   (HeidiSQL 등 GUI 툴로 `schema.sql` 내용을 그대로 실행해도 무방)
-
-4. `server/db_config.example.json`을 같은 폴더에 `db_config.json`으로 복사 후, 본인 MariaDB 접속 정보로 수정
-
-```json
-{
-    "host": "127.0.0.1",
-    "port": 3306,
-    "user": "root",
-    "password": "YOUR_PASSWORD_IS_HERE",
-    "database": "pulsegrid"
-}
-```
-
-### 설치 및 실행
-
 ### 설치 및 실행
 
 1. 저장소 클론 후 `server/` 폴더로 이동
