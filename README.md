@@ -10,7 +10,9 @@
 > **M6.5(시각화 확장) 완료** — 시간대별 CPU 히트맵, 실시간 전력(W) 표시, 라이트/다크 테마 전환
 > **M7(문서화) 진행 중** — README/API 명세서 정리, 스크린샷 추가 예정
 
-<!-- TODO: 대시보드 스크린샷 또는 동작 GIF 삽입 -->
+![PulseGrid 대시보드 — 데스크탑/노트북 실시간 모니터링, 전력 표시, 히트맵](docs/images/dashboard-main.png)
+
+![실시간 갱신 데모](docs/images/realtime-update.gif)
 
 ---
 
@@ -22,6 +24,24 @@
 - **임계치 경고** — 온도 및 사용률이 기준을 넘으면 시각적으로 표시
 - **반응형 대시보드** — 화면 폭에 따라 카드 열 수 자동 조절, 연결 끊김 시 자동 재연결
 - **오프라인 감지** — 기기가 꺼지거나 연결이 끊기면 자동 감지
+
+---
+
+## 스크린샷 더 보기
+
+<details>
+<summary>히스토리 모드 (과거 데이터 조회)</summary>
+
+![히스토리 모드 전환 데모](docs/images/history-mode.gif)
+
+</details>
+
+<details>
+<summary>라이트 / 다크 테마 전환</summary>
+
+![테마 전환 데모](docs/images/theme-toggle.gif)
+
+</details>
 
 ---
 
