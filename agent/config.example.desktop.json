@@ -1,0 +1,33 @@
+{
+  "device_id": "desktop",
+  "device_name": "YOUR-DESKTOP-NAME",
+  "lhm_url": "http://localhost:8085/data.json",
+  "server_url": "http://127.0.0.1:8000/api/v1/metrics",
+  "disk_map": [
+    {
+      "id": "main",
+      "primary": true,
+      "label": "C: (SSD 1TB)",
+      "usage_sensor": "/nvme/0/load/30",
+      "temp_sensor": "/nvme/0/temperature/0"
+    },
+    {
+      "id": "sub",
+      "primary": false,
+      "label": "D: (SSD 1TB)",
+      "usage_sensor": "/nvme/1/load/30",
+      "temp_sensor": "/nvme/1/temperature/0"
+    }
+  ],
+  "sensor_map": {
+    "cpu_usage": "/amdcpu/0/load/0",
+    "cpu_temp": "/amdcpu/0/temperature/2",
+    "cpu_power": "/amdcpu/0/power/0",
+    "gpu_usage": "/gpu-nvidia/0/load/0",
+    "gpu_temp": "/gpu-nvidia/0/temperature/0",
+    "gpu_power": "/gpu-nvidia/0/power/0",
+    "ram_usage": "/ram/load/0",
+    "ram_used": "/ram/data/0",
+    "ram_available": "/ram/data/1"
+  }
+}

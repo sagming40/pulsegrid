@@ -1,0 +1,29 @@
+{
+  "device_id": "laptop",
+  "device_name": "YOUR-LAPTOP-NAME",
+  "lhm_url": "http://localhost:8085/data.json",
+  "server_url": "http://<데스크탑(서버)의_사설_IP>:8000/api/v1/metrics",
+  "disk_map": [
+    {
+      "id": "main",
+      "primary": true,
+      "label": "C: (SSD 512GB)",
+      "usage_sensor": "/nvme/0/load/30",
+      "temp_sensor": "/nvme/0/temperature/0"
+    }
+  ],
+  "battery_sensor": {
+    "level": "/battery/YOUR_LAPTOP_IS_HERE/level/0"
+  },
+  "sensor_map": {
+    "cpu_usage": "/intelcpu/0/load/0",
+    "cpu_temp": "/intelcpu/0/temperature/12",
+    "cpu_power": "/intelcpu/0/power/0",
+    "gpu_usage": "/gpu-intel-integrated/%5C%5C%3F%5CPCI%23VEN_8086%26DEV_46A8%26SUBSYS_380217AA%26REV_0C%233%2611583659%260%2610%23%7B1ca05180-a699-450a-9a0c-de4fbe3ddd89%7D/load/6",
+    "gpu_temp": "",
+    "gpu_power": "/gpu-intel-integrated/%5C%5C%3F%5CPCI%23VEN_8086%26DEV_46A8%26SUBSYS_380217AA%26REV_0C%233%2611583659%260%2610%23%7B1ca05180-a699-450a-9a0c-de4fbe3ddd89%7D/power/0",
+    "ram_usage": "/ram/load/0",
+    "ram_used": "/ram/data/0",
+    "ram_available": "/ram/data/1"
+  }
+}
