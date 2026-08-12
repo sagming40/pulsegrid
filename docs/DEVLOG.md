@@ -233,3 +233,31 @@
 - M7 이후 M8(전국 전력수급 API 연동) 진행 예정
 
 ---
+
+## 2026-08-12 — M7 완료: 문서화 / 배포 정리
+
+**관련 마일스톤**: M7 (문서화/배포 정리) → 완료
+
+**한 일**
+- **Task 7-1 (의존성/설정 정리)**: `requirements.txt`, `db_config.example.json`은 이미 최신 상태임을 확인. `agent/config.example.json` 단일 파일을 `config.example.desktop.json`/`.laptop.json`으로 분리. `requirements.txt`가 PowerShell 리다이렉션(`pip freeze > requirements.txt`) 과정에서 UTF-16으로 잘못 저장돼 있던 것을 발견해 UTF-8로 재저장
+- **Task 7-2 (`03_api_spec.md` 실제 구현 반영)**: cpu/gpu에 `power` 필드 추가, `history` 쿼리 파라미터를 `from`/`to`/`metric` → `device_id`/`minutes`로 갱신(응답 구조도 함께 변경), `heatmap` 엔드포인트 신규 문서화, `devices`/`devices/{id}`/`health`를 미구현으로 명시(사유 기록). 문서 검수 과정에서 `get_history()`의 `SELECT` 절에 `cpu_power`/`gpu_power`가 누락돼 DB엔 저장되지만 조회 응답엔 안 나오던 버그를 발견해 수정
+- **Task 7-3 (README 전면 개정)**: MariaDB 설치/`schema.sql` 실행/`db_config.json` 설정 순서를 신설, config 파일 분리 반영, API 개요·프로젝트 구조·개발 로드맵·개발 환경 갱신, `LICENSE`(MIT) 신규 추가
+- **Task 7-4 (스크린샷/GIF)**: 메인 대시보드(PNG), 실시간 갱신·히스토리 모드 전환·라이트/다크 테마 전환(GIF) 총 4종 캡처, `docs/images/` 폴더 신설 후 README에 삽입(테마/히스토리는 `<details>` 접이식 블록으로 배치)
+- **Task 7-5 (클린룸 검증)**: 노트북에 완전히 새 폴더로 클론해 README만 보고 처음부터 재현. 아래 4가지 문제 발견 및 수정
+
+**막혔던 점 / 트러블슈팅**
+- `mysql -u root -p < schema.sql`이 PowerShell에서 `The '<' operator is reserved for future use` 오류로 실패 — cmd.exe/Git Bash에서만 되는 리다이렉션 문법이었음. `Get-Content schema.sql | mysql -u root -p` 파이프 방식으로 교체, README에도 반영
+- MariaDB 설치 후 `mysql` 명령어가 인식되지 않음 — 설치 경로의 `bin` 폴더가 시스템 PATH에 자동 등록되지 않는 경우가 있음을 확인. README "데이터베이스 준비" 섹션에 `mysql --version`으로 사전 확인하고, 안 되면 PATH를 직접 추가하라는 안내 신설
+- `schema.sql` 실행 시 `ERROR 1046: No database selected` — `CREATE DATABASE`만 있고 `USE pulsegrid;`가 빠져 있어, CLI로 스크립트 전체를 실행하면 테이블을 어느 DB에 만들지 지정되지 않는 문제였음. HeidiSQL로 DB를 미리 선택해두고 작업했던 이전 세션에서는 드러나지 않았던 버그. `schema.sql`에 `USE pulsegrid;` 한 줄 추가로 수정
+- agent `config.json`의 `server_url`/`device_name`/`sensor_map` 값을 "어떻게" 채우는지 README에 절차가 전혀 없어, 처음 보는 입장에서는 막막한 지점이었음. 특히 `server_url`에 `127.0.0.1`을 그대로 넣으면 다른 기기에선 절대 서버를 못 찾는다는 점(자기 자신을 가리키는 특수 주소)을 명확히 설명하지 않았던 것이 가장 위험한 공백이었음 — 에러 메시지 없이 조용히 연결만 안 되는 유형이라 원인 추적이 어려움. README에 `ipconfig`로 IP 확인하는 법, `data.json`에서 `device_name`/SensorId 찾는 법(검색 키워드 표 포함)을 상세히 추가
+- 위 4가지 모두 **데스크탑 하나로만 개발할 땐 절대 드러나지 않았을 문제들**이었음. 개발자 본인 환경은 이미 모든 게 세팅된 상태라 "처음 겪는 막막함"을 재현할 수 없다는 걸 체감
+
+**교훈**
+- 클린룸 검증은 "형식적인 마지막 단계"가 아니라, 이번 세션에서 발견한 문제 4개 중 3개가 **문서만 봐서는 절대 못 잡는 종류**(터미널 종류 차이, 환경변수, 실행 순서 의존성)였음. 코드 리뷰나 API 스펙 검수와는 완전히 다른 종류의 검증이라는 걸 확인
+- "완료 기준"을 "README만 보고 실행 가능한 상태"처럼 구체적으로 적어두면, 그 기준을 실제로 시험해볼 방법(클린룸)도 자연히 따라온다는 걸 체감 — 애매한 완료 기준이었다면 이런 문제들을 못 찾았을 것
+
+**다음에 할 일**
+- M7 완료로 v1.0 이후 계획했던 P1 항목(M5~M7) 전부 완주
+- M8(공공데이터포털 전국 전력수급 현황 API 연동) 진행 예정
+
+---
