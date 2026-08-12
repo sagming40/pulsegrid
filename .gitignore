@@ -31,6 +31,7 @@ server/config.json
 !.env.example
 *.local.json
 db_config.json
+server/power_config.json
 
 # ===== 데이터베이스 =====
 *.db
