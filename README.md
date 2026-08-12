@@ -152,6 +152,8 @@ pulsegrid/
 1. [MariaDB](https://mariadb.org/download/) 설치 (또는 이미 있는 MariaDB 서버 사용)
 2. **MariaDB Connector/C** 설치 — Python `mariadb` 패키지가 내부적으로 이 C 라이브러리를 필요로 함 (pip만으로는 설치되지 않음)
    - [Connector/C 다운로드](https://mariadb.com/downloads/connectors/connectors-data-access/c-connector) 후 설치
+3. 터미널에서 `mysql --version`을 실행해 정상 동작하는지 확인
+   - `mysql : 용어가 ... 인식되지 않습니다` 등의 오류가 뜨면, MariaDB 설치 경로의 `bin` 폴더(예: `C:\Program Files\MariaDB 12.x\bin`)가 시스템 PATH에 등록되지 않은 것입니다. 환경 변수 편집에서 직접 추가한 뒤 터미널을 새로 열어 다시 확인하세요.
 
 ### 설치 및 실행
 
@@ -172,10 +174,10 @@ pulsegrid/
 
 4. `schema.sql`을 실행해 데이터베이스와 테이블 생성
 
-```bash
-   mysql -u root -p < schema.sql
+```powershell
+Get-Content schema.sql | mysql -u root -p
 ```
-   (HeidiSQL 등 GUI 툴로 `schema.sql` 내용을 그대로 실행해도 무방)
+   (`mysql -u root -p < schema.sql`는 cmd.exe/Git Bash에서는 동작하지만, **PowerShell에서는 `<` 리다이렉션이 지원되지 않아** 위 명령을 사용해야 합니다. HeidiSQL 등 GUI 툴로 `schema.sql` 내용을 그대로 실행해도 무방)
 
 5. `db_config.example.json`을 같은 폴더에 `db_config.json`으로 복사 후, 본인 MariaDB 접속 정보로 수정
 
@@ -197,9 +199,50 @@ pulsegrid/
 
 7. 브라우저에서 `http://127.0.0.1:8000` 접속 확인
 
-8. `agent/config.example.desktop.json`(또는 `.laptop.json`)을 본인 기기 종류에 맞게 `agent/config.json`으로 복사 후, 다음 항목을 본인 환경에 맞게 수정
-   - `device_name`, `server_url`
-   - `sensor_map`, `disk_map`의 SensorId — `http://localhost:8085/data.json`에서 본인 하드웨어의 실제 경로 확인 필요 (CPU/GPU 제조사에 따라 다름)
+8. `agent/config.example.desktop.json`(또는 `.laptop.json`)을 본인 기기 종류에 맞게 `agent/config.json`으로 복사 후, 아래 안내에 따라 본인 환경에 맞게 수정
+
+   **8-1. `server_url` — 서버가 실행 중인 기기의 IP 주소 확인**
+
+   - 서버를 실행하는 그 기기(예: 데스크탑)에서 명령 프롬프트를 열고 다음을 입력:
+```powershell
+     ipconfig
+```
+   - 출력 결과에서 **"IPv4 주소"** 항목을 찾음 (예: `192.168.0.5`) — 보통 `192.168.x.x`나 `10.x.x.x` 형태
+   - `agent/config.json`의 `server_url`에 이 주소를 사용: 
+   ```
+   "server_url": "http://192.168.0.5:8000/api/v1/metrics"
+   ```
+
+   > ⚠️ **주의**: `127.0.0.1`은 "이 컴퓨터 자기 자신"만 가리키는 특수 주소입니다. 서버와 같은 기기에서 agent를 돌린다면 `127.0.0.1`도 동작하지만, **다른 기기(노트북 등)에서는 반드시 서버 기기의 실제 IPv4 주소를 사용해야 합니다.** 두 기기가 같은 공유기(Wi-Fi)에 연결돼 있어야 서로 통신할 수 있습니다.
+   >
+   > 공유기 환경에 따라 IP가 재부팅 시 바뀔 수 있습니다. 연결이 갑자기 안 되면 서버 기기에서 `ipconfig`를 다시 확인하세요.
+
+   **8-2. `device_name` — LibreHardwareMonitor에서 컴퓨터 이름 확인**
+
+   - 브라우저에서 `http://localhost:8085/data.json` 접속
+   - Chrome/Edge는 JSON을 자동으로 트리 구조로 예쁘게 보여줍니다. 맨 바깥 `Children` 배열을 펼치면 첫 번째 항목의 `"Text"` 값이 컴퓨터 이름입니다 (예: `"Text": "DESKTOP-5VSB06S"`)
+   - `Ctrl+F`로 `"Text":"DESKTOP` 또는 `"Text":"LAPTOP` 처럼 검색하면 더 빠르게 찾을 수 있습니다
+   - 이 값을 그대로 `device_name`에 복사
+
+   **8-3. `sensor_map` / `disk_map` / `battery_sensor`의 SensorId 값 찾기**
+
+   같은 `http://localhost:8085/data.json` 페이지에서, `Ctrl+F`로 아래 키워드를 검색해 해당 항목 바로 옆의 **`"SensorId"` 값**을 복사합니다.
+
+   | 찾고 싶은 값 | 검색 키워드 | 비고 |
+   |---|---|---|
+   | CPU 전체 사용률 | `CPU Total` | Intel 기준. AMD는 `Core (Tctl/Tdie)` 등 명칭이 다를 수 있음 |
+   | CPU 온도 | `CPU Package` | Temperatures 섹션 아래 있는 것 사용 |
+   | CPU 소비전력 | `CPU Package` | Powers 섹션 아래 있는 것 — **위 온도용과 이름이 같으니 섹션 위치로 구분** |
+   | GPU 사용률/온도/전력 | `GPU Core` 또는 그래픽카드 이름 | 그래픽카드 항목 아래 Load/Temperature/Power |
+   | RAM 사용률 | `Memory` | "Total Memory" 항목 아래 것 사용 (Virtual Memory 아님) |
+   | 디스크 사용률 | `Used Space` | 디스크(SSD/NVMe) 항목 아래 |
+   | 디스크 온도 | `Temperature` | 같은 디스크 항목 아래 |
+   | 배터리 잔량 | `Charge Level` | 노트북에만 존재 |
+
+   찾은 항목의 `"SensorId": "/xxx/yyy/zzz"` 값을 그대로 복사해 config.json의 해당 자리에 붙여넣으면 됩니다.
+
+   > ⚠️ 이 경로는 **CPU/GPU 제조사와 모델에 따라 완전히 다릅니다.** 예시 파일(`config.example.desktop.json`/`.laptop.json`)의 값은 작성자의 특정 하드웨어 기준이라 그대로 복사하면 동작하지 않습니다. 반드시 본인 기기의 `data.json`에서 직접 확인해야 합니다.
+
    - 다른 기기를 추가할 경우, 그 기기에서도 동일하게 `agent/` 폴더와 자신만의 `config.json`을 두고 실행
 
 9. (별도 터미널) `agent/agent.py` 실행 → 대시보드에 CPU/GPU/RAM 값이 2초 간격으로 갱신되는지 확인
