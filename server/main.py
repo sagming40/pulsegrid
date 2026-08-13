@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 import asyncio
 from models import MetricPayload
 from db import get_history, get_heatmap, save_metric_snapshot
+from power import update_power_cache_periodically, get_power_cache
 
 # ─────────────────────────────────────────────────────────────
 # 순찰(백그라운드 작업) 관련 설정값
@@ -24,11 +25,13 @@ HISTORY_SAVE_INTERVAL_SECONDS = 60   # 1분마다 창고에 사진 찍어서 저
 async def lifespan(app: FastAPI):
     # 서버 켜지는 순간: 순찰 함수를 "백그라운드"에 등록 (여기서 실행하고 바로 다음 줄로)
     patrol_task = asyncio.create_task(patrol_offline_devices())
-    history_task = asyncio.create_task(save_history_periodically())   # ⭐ 추가
+    history_task = asyncio.create_task(save_history_periodically())      # ⭐ 추가
+    power_task = asyncio.create_task(update_power_cache_periodically())  # ⭐ 추가
     yield   # 여기서부터 실제로 서버가 손님(요청)을 받기 시작함
     # 서버가 꺼지는 순간: 순찰 알바생도 같이 퇴근
     patrol_task.cancel()
     history_task.cancel()   # ⭐ 추가
+    power_task.cancel()     # ⭐ 추가
 
 # 매니저(app) 한 명 채용
 # 이 app이 앞으로 모든 주소(엔드포인트)를 관리하게 됨
@@ -104,7 +107,19 @@ def read_heatmap(hours: int = 24):
     return {
         "success": True,
         "data": rows
-    }    
+    }
+    
+
+@app.get("/api/v1/power-status")
+def read_power_status():
+    """
+    GET /api/v1/power-status
+    server가 caching해둔 전국 전력수급 현황을 반환.
+    """        
+    return {
+        "success": True,
+        "data": get_power_cache()
+    }
 
 
 @app.post("/api/v1/metrics")
