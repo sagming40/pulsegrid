@@ -1,6 +1,6 @@
 {
   "service_key": "여기에_공공데이터포털에서 발급받은_DECODING_KEY를_붙여넣으세요",
-  "api_base_url": "https://openapi.kpx.or.kr/openapi/sukub5mMaxDatetime/getSukub5mMaxDatetime",
+  "api_base_url": "https://apis.data.go.kr/B552115/Sukub5mToday/getSukub5mToday",
   "fetch_interval_minutes": 15,
   "cache_duration_minutes": 20
 }
